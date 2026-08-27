@@ -1,0 +1,3142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Núcleo Jardim Florido - Fluxo de Caixa</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- html2pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Custom Styles -->
+  <style>
+/* Estilos Customizados - Núcleo Jardim Florido */
+:root {
+  --primary-50: #f0fdf4;
+  --primary-100: #dcfce7;
+  --primary-200: #bbf7d0;
+  --primary-500: #22c55e;
+  --primary-600: #16a34a;
+  --primary-700: #15803d;
+  --primary-800: #166534;
+  --primary-900: #14532d;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Transições suaves */
+.transition-all-custom {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Badge de status */
+.badge-income {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.badge-expense {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.badge-fixed {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+.badge-pending {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Calendário */
+.calendar-day-cell {
+  min-height: 48px;
+  transition: all 0.15s ease-in-out;
+}
+.calendar-day-cell:hover {
+  background-color: #f0fdf4;
+}
+.calendar-day-selected {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+.calendar-day-selected .day-number {
+  font-weight: 700;
+  color: #ffffff;
+}
+.calendar-day-today {
+  border: 2px solid #22c55e;
+}
+
+/* Botões com efeito de clique */
+button:active, .btn-touch:active {
+  transform: scale(0.97);
+}
+
+/* Estilos de Impressão / PDF */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+  }
+  .no-print, nav, #bottom-nav, #fab-button, .modal-backdrop, #toast-container, header {
+    display: none !important;
+  }
+  #report-print-container {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+  }
+  .page-break {
+    page-break-after: always;
+  }
+}
+
+</style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#15803d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="NJF Caixa">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-12 antialiased">
+
+  <!-- Top Header / App Bar -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      
+      <!-- Brand & Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="App.switchTab('dashboard')">
+        <div class="w-10 h-10 rounded-2xl bg-brand-800 text-white flex items-center justify-center shadow-sm shadow-brand-800/20">
+          <i class="fa-solid fa-seedling text-lg text-emerald-300"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">Núcleo Jardim Florido</h1>
+          <p class="text-[11px] font-medium text-brand-700">Fluxo de Caixa & Gestão</p>
+        </div>
+      </div>
+
+      <!-- Seletor de Mês & Ação Rápida -->
+      <div class="flex items-center gap-2">
+        <div class="relative">
+          <select class="global-month-selector bg-brand-50 border border-brand-200 text-brand-900 text-xs sm:text-sm font-semibold rounded-xl px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none cursor-pointer">
+            <!-- Populado via JS -->
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-brand-700">
+            <i class="fa-solid fa-chevron-down text-xs"></i>
+          </div>
+        </div>
+
+        <button onclick="App.openTransactionModal()" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+          <i class="fa-solid fa-plus"></i>
+          <span>Lançamento</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Container Principal -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
+
+    <!-- ============================================================ -->
+    <!-- ABA 1: DASHBOARD / RESUMO -->
+    <!-- ============================================================ -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      
+      <!-- Cards de Resumo Principal -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        
+        <!-- Saldo Geral -->
+        <div class="col-span-2 sm:col-span-1 bg-gradient-to-br from-brand-800 to-brand-900 text-white p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden">
+          <div class="relative z-10">
+            <span class="text-[11px] font-semibold text-emerald-200 tracking-wider uppercase block">Saldo Geral em Caixa</span>
+            <h3 id="dash-general-balance" class="text-xl sm:text-2xl font-black mt-1">R$ 0,00</h3>
+            <p class="text-[11px] text-emerald-100/80 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-vault text-[10px]"></i> Acumulado total
+            </p>
+          </div>
+          <i class="fa-solid fa-coins absolute -bottom-3 -right-3 text-6xl text-white/10 pointer-events-none"></i>
+        </div>
+
+        <!-- Entradas do Mês -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Entradas do Mês</span>
+            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-arrow-down"></i>
+            </span>
+          </div>
+          <h3 id="dash-month-income" class="text-lg sm:text-xl font-bold text-emerald-700 mt-1">R$ 0,00</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Receitas confirmadas</p>
+        </div>
+
+        <!-- Saídas do Mês -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Saídas do Mês</span>
+            <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-arrow-up"></i>
+            </span>
+          </div>
+          <h3 id="dash-month-expense" class="text-lg sm:text-xl font-bold text-rose-600 mt-1">R$ 0,00</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Despesas pagas</p>
+        </div>
+
+        <!-- Resultado do Mês -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Resultado Operacional</span>
+            <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-scale-balanced"></i>
+            </span>
+          </div>
+          <h3 id="dash-month-result" class="text-lg sm:text-xl font-bold text-slate-800 mt-1">R$ 0,00</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Entradas - Saídas</p>
+        </div>
+
+      </div>
+
+      <!-- Alerta de Custos Fixos Pendentes & Atalhos Rápidos -->
+      <div class="bg-brand-50/80 border border-brand-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <i class="fa-solid fa-bell"></i>
+          </div>
+          <div>
+            <h4 class="text-xs sm:text-sm font-bold text-slate-900">Atenção aos Custos Fixos do Mês</h4>
+            <p id="dash-pending-fixed" class="text-xs text-brand-900 font-medium">Carregando pendências...</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button onclick="App.switchTab('fixed_costs')" class="w-full sm:w-auto px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white text-xs font-semibold rounded-xl shadow-xs transition-all-custom text-center">
+            Ver e Confirmar Contas
+          </button>
+        </div>
+      </div>
+
+      <!-- Seção de Gráficos -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Gráfico Comparativo 6 Meses -->
+        <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-slate-800">Evolução do Fluxo de Caixa</h3>
+              <p class="text-xs text-slate-500">Comparativo dos últimos 6 meses</p>
+            </div>
+            <span class="text-xs font-medium text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg">Entradas vs Saídas</span>
+          </div>
+          <div class="h-64 relative">
+            <canvas id="chart-cashflow-evolution"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico de Despesas por Categoria -->
+        <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="mb-4">
+            <h3 class="text-sm sm:text-base font-bold text-slate-800">Despesas por Categoria</h3>
+            <p class="text-xs text-slate-500">Distribuição no mês selecionado</p>
+          </div>
+          <div class="h-64 relative">
+            <canvas id="chart-expenses-category"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimos Lançamentos do Mês -->
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-800">Lançamentos Recentes do Mês</h3>
+            <p class="text-xs text-slate-500">Últimas movimentações registradas</p>
+          </div>
+          <button onclick="App.switchTab('transactions')" class="text-xs font-bold text-brand-700 hover:text-brand-800 flex items-center gap-1">
+            <span>Ver todos</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </button>
+        </div>
+        <div id="dash-recent-transactions">
+          <!-- Populado via JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 2: LANÇAMENTOS (ENTRADAS & SAÍDAS) -->
+    <!-- ============================================================ -->
+    <section id="tab-transactions" class="tab-content hidden space-y-5">
+      
+      <!-- Cabeçalho da Aba -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Histórico de Lançamentos</h2>
+          <p class="text-xs text-slate-500">Gerencie todas as entradas e saídas do fluxo de caixa</p>
+        </div>
+        <button onclick="App.openTransactionModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+          <i class="fa-solid fa-plus"></i>
+          <span>Novo Lançamento</span>
+        </button>
+      </div>
+
+      <!-- Barra de Filtros e Busca -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/70 shadow-2xs space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <!-- Busca -->
+          <div class="relative">
+            <input type="text" id="tx-search-input" placeholder="Buscar descrição ou categoria..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 text-xs sm:text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+          </div>
+
+          <!-- Filtro de Tipo -->
+          <select id="tx-filter-type" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 text-xs sm:text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="all">Todos os Tipos (Entradas & Saídas)</option>
+            <option value="income">Apenas Entradas (+)</option>
+            <option value="expense">Apenas Saídas (-)</option>
+          </select>
+
+          <!-- Filtro de Categoria -->
+          <select id="tx-filter-category" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 text-xs sm:text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="all">Todas as Categorias</option>
+          </select>
+        </div>
+
+        <!-- Resumo dos registros filtrados -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+          <span>Resumo do filtro:</span>
+          <div id="tx-filtered-summary" class="flex items-center gap-2 font-medium">
+            <!-- Populado via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Transações -->
+      <div id="transactions-list">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 3: CUSTOS FIXOS & CONFIRMAÇÃO MANUAL -->
+    <!-- ============================================================ -->
+    <section id="tab-fixed_costs" class="tab-content hidden space-y-5">
+      
+      <!-- Cabeçalho -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Custos Fixos & Recorrentes</h2>
+          <p class="text-xs text-slate-500">Acompanhe e confirme manualmente os pagamentos das despesas fixas</p>
+        </div>
+        <button onclick="App.openFixedCostModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+          <i class="fa-solid fa-plus"></i>
+          <span>Novo Custo Fixo</span>
+        </button>
+      </div>
+
+      <!-- Resumo de Custos Fixos do Mês -->
+      <div id="fixed-costs-summary">
+        <!-- Populado via JS -->
+      </div>
+
+      <!-- Lista de Custos Fixos -->
+      <div id="fixed-costs-list">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 4: CALENDÁRIO INTERATIVO -->
+    <!-- ============================================================ -->
+    <section id="tab-calendar" class="tab-content hidden space-y-5">
+      
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+        
+        <!-- Controles do Calendário -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <button onclick="CalendarManager.prevMonth()" class="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all" title="Mês Anterior">
+              <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+            <h3 id="calendar-month-year-title" class="text-base sm:text-lg font-bold text-slate-900 min-w-[150px] text-center">
+              Agosto de 2026
+            </h3>
+            <button onclick="CalendarManager.nextMonth()" class="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all" title="Próximo Mês">
+              <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="CalendarManager.goToToday()" class="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-800 text-xs font-bold rounded-xl border border-brand-200 transition-all">
+              Hoje
+            </button>
+          </div>
+        </div>
+
+        <!-- Legenda de Cores -->
+        <div class="flex flex-wrap items-center gap-4 my-3 text-[11px] text-slate-500">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span>Entrada</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            <span>Saída</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span>Custo Fixo a Vencer</span>
+          </div>
+        </div>
+
+        <!-- Cabeçalho dos Dias da Semana -->
+        <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 uppercase py-2">
+          <span>Dom</span>
+          <span>Seg</span>
+          <span>Ter</span>
+          <span>Qua</span>
+          <span>Qui</span>
+          <span>Sex</span>
+          <span>Sáb</span>
+        </div>
+
+        <!-- Grid de Dias do Mês -->
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 md:gap-2">
+          <!-- Populado via JS -->
+        </div>
+
+      </div>
+
+      <!-- Detalhes do Dia Selecionado -->
+      <div id="calendar-day-details">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 5: RELATÓRIOS & COMPARTILHAMENTO -->
+    <!-- ============================================================ -->
+    <section id="tab-reports" class="tab-content hidden space-y-5">
+      
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Prestação de Contas & Relatórios</h2>
+          <p class="text-xs text-slate-500">Compartilhe no WhatsApp ou gere documentos em PDF com facilidade</p>
+        </div>
+      </div>
+
+      <div id="reports-preview-container">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 6: CATEGORIAS & CONFIGURAÇÕES -->
+    <!-- ============================================================ -->
+    <section id="tab-categories" class="tab-content hidden space-y-6">
+      
+      <!-- Categorias -->
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-800">Categorias Personalizadas</h3>
+            <p class="text-xs text-slate-500">Organize os tipos de receitas e despesas</p>
+          </div>
+          <button onclick="App.openCategoryModal()" class="px-3 py-1.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-semibold rounded-xl shadow-xs transition-all-custom">
+            + Nova Categoria
+          </button>
+        </div>
+        <div id="categories-list">
+          <!-- Populado via JS -->
+        </div>
+      </div>
+
+      <!-- Backup e Restauração -->
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs space-y-4">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-800">Segurança & Backup dos Dados</h3>
+          <p class="text-xs text-slate-500">Como a aplicação roda no seu navegador, você pode salvar cópias de segurança a qualquer momento</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <button onclick="App.exportBackupFile()" class="flex items-center justify-center gap-2 p-3 bg-brand-50 hover:bg-brand-100 text-brand-900 border border-brand-200 rounded-xl text-xs font-bold transition-all">
+            <i class="fa-solid fa-download"></i>
+            <span>Exportar Cópia de Backup (.JSON)</span>
+          </button>
+
+          <label class="flex items-center justify-center gap-2 p-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold cursor-pointer transition-all">
+            <i class="fa-solid fa-upload"></i>
+            <span>Restaurar Backup</span>
+            <input type="file" accept=".json" onchange="App.importBackupFile(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- BARRA DE NAVEGAÇÃO INFERIOR (MOBILE & DESKTOP DOCK) -->
+  <!-- ============================================================ -->
+  <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200/80 px-2 py-1.5 z-40 shadow-lg">
+    <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
+      
+      <button data-tab="dashboard" onclick="App.switchTab('dashboard')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-chart-pie text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Resumo</span>
+      </button>
+
+      <button data-tab="transactions" onclick="App.switchTab('transactions')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-list-ul text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Lançamentos</span>
+      </button>
+
+      <button data-tab="fixed_costs" onclick="App.switchTab('fixed_costs')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-clipboard-check text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Custos Fixos</span>
+      </button>
+
+      <button data-tab="calendar" onclick="App.switchTab('calendar')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-calendar-days text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Calendário</span>
+      </button>
+
+      <button data-tab="reports" onclick="App.switchTab('reports')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Relatórios</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- Botão Flutuante (FAB) para Mobile -->
+  <button id="fab-button" onclick="App.openTransactionModal()" class="sm:hidden fixed bottom-20 right-4 w-12 h-12 rounded-full bg-brand-800 hover:bg-brand-900 text-white flex items-center justify-center shadow-lg z-30 transition-transform active:scale-95" title="Novo Lançamento">
+    <i class="fa-solid fa-plus text-lg"></i>
+  </button>
+
+  <!-- ============================================================ -->
+  <!-- MODAIS -->
+  <!-- ============================================================ -->
+
+  <!-- Modal 1: Novo / Editar Lançamento -->
+  <div id="modal-transaction" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="tx-modal-title" class="text-base sm:text-lg font-bold text-slate-900">Novo Lançamento</h3>
+        <button onclick="App.closeModal('modal-transaction')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-transaction" onsubmit="App.saveTransactionFromForm(event)" class="space-y-4">
+        <input type="hidden" id="tx-type" value="income">
+
+        <!-- Seletor Entrada / Saída -->
+        <div class="flex items-center p-1 bg-slate-100 rounded-2xl gap-1">
+          <button type="button" id="btn-type-income" onclick="App.updateTransactionTypeButtons('income')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold bg-brand-800 text-white shadow-xs">
+            <i class="fa-solid fa-arrow-down mr-1"></i> Entrada (+)
+          </button>
+          <button type="button" id="btn-type-expense" onclick="App.updateTransactionTypeButtons('expense')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-600">
+            <i class="fa-solid fa-arrow-up mr-1"></i> Saída (-)
+          </button>
+        </div>
+
+        <!-- Descrição -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Descrição *</label>
+          <input type="text" id="tx-description" required placeholder="Ex: Venda de Mudas, Adubo, Doação..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Valor & Data -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Valor (R$) *</label>
+            <input type="number" step="0.01" min="0.01" id="tx-amount" required placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Data *</label>
+            <input type="date" id="tx-date" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <!-- Categoria & Forma de Pagamento -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Categoria *</label>
+            <select id="tx-category" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <!-- Populado via JS -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Forma de Pagamento</label>
+            <select id="tx-payment-method" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Transferência">Transferência Bancária</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Cartão">Cartão Débito/Crédito</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Observações (opcional)</label>
+          <input type="text" id="tx-notes" placeholder="Detalhes adicionais..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-transaction')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all">
+            Salvar Lançamento
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal 2: Novo / Editar Custo Fixo -->
+  <div id="modal-fixed-cost" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="fc-modal-title" class="text-base sm:text-lg font-bold text-slate-900">Novo Custo Fixo</h3>
+        <button onclick="App.closeModal('modal-fixed-cost')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-fixed-cost" onsubmit="App.saveFixedCostFromForm(event)" class="space-y-4">
+        <!-- Nome -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Nome do Custo Fixo *</label>
+          <input type="text" id="fc-name" required placeholder="Ex: Energia Elétrica, Internet, Água..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Valor & Dia de Vencimento -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Valor Estimado (R$) *</label>
+            <input type="number" step="0.01" min="0.01" id="fc-amount" required placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Dia do Vencimento *</label>
+            <input type="number" min="1" max="31" id="fc-due-day" required placeholder="Ex: 10" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <!-- Categoria -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Categoria *</label>
+          <select id="fc-category" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <!-- Populado via JS -->
+          </select>
+        </div>
+
+        <!-- Observações -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Observações</label>
+          <input type="text" id="fc-notes" placeholder="Detalhes do contrato, código do débito..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-fixed-cost')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all">
+            Salvar Custo Fixo
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal 3: Confirmar Pagamento de Custo Fixo -->
+  <div id="modal-confirm-fixed-cost" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <span class="text-[11px] font-bold text-brand-700 uppercase tracking-wider">Confirmação Manual</span>
+          <h3 class="text-base sm:text-lg font-bold text-slate-900">Efetivar Pagamento</h3>
+        </div>
+        <button onclick="App.closeModal('modal-confirm-fixed-cost')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-confirm-fixed-cost" onsubmit="App.executeConfirmFixedCost(event)" class="space-y-4">
+        <input type="hidden" id="conf-fc-id">
+        <input type="hidden" id="conf-fc-yearmonth">
+
+        <div class="p-3.5 bg-brand-50/70 border border-brand-200/80 rounded-2xl">
+          <span class="text-[11px] text-brand-800 font-medium block">Custo Fixo Selecionado:</span>
+          <p id="conf-fc-name-display" class="text-sm font-bold text-brand-900 mt-0.5">Conta</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Valor Pago (R$) *</label>
+            <input type="number" step="0.01" min="0.01" id="conf-fc-amount" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Data do Pagamento *</label>
+            <input type="date" id="conf-fc-date" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Forma de Pagamento</label>
+          <select id="conf-fc-method" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="Pix">Pix</option>
+            <option value="Boleto">Boleto Bancário</option>
+            <option value="Transferência">Transferência Bancária</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Cartão">Cartão</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Observações do Comprovante</label>
+          <input type="text" id="conf-fc-notes" placeholder="Ex: Pago com desconto, repassado comprovante..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-confirm-fixed-cost')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all">
+            Confirmar e Lançar
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal 4: Nova Categoria -->
+  <div id="modal-category" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-900">Nova Categoria</h3>
+        <button onclick="App.closeModal('modal-category')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="App.saveCategoryFromForm(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Nome da Categoria *</label>
+          <input type="text" id="cat-name" required placeholder="Ex: Eventos, Plantio, Manutenção..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tipo *</label>
+            <select id="cat-type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+              <option value="income">Entrada (+)</option>
+              <option value="expense">Saída (-)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Cor Identificadora</label>
+            <input type="color" id="cat-color" value="#15803d" class="w-full h-9 p-1 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-category')" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2 bg-brand-800 text-white text-xs font-bold rounded-xl">
+            Criar Categoria
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Container Oculto para Impressão e Download de PDF -->
+  <div id="report-print-container" class="hidden"></div>
+
+  <!-- Toast Container para Alertas -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- Scripts Integrados (Single-File Standalone) -->
+  <script>
+/**
+ * Gerenciador de Armazenamento Local (LocalStorage) - Núcleo Jardim Florido
+ */
+
+const STORAGE_KEYS = {
+  TRANSACTIONS: 'njf_transactions_v1',
+  FIXED_COSTS: 'njf_fixed_costs_v1',
+  FIXED_CONFIRMATIONS: 'njf_fixed_confirmations_v1',
+  CATEGORIES: 'njf_categories_v1',
+  SETTINGS: 'njf_settings_v1'
+};
+
+const DEFAULT_CATEGORIES = [
+  // Entradas
+  { id: 'cat_in_1', name: 'Mensalidades / Contribuições', type: 'income', color: '#16a34a', icon: 'fa-hand-holding-dollar' },
+  { id: 'cat_in_2', name: 'Doações e Apadrinhamentos', type: 'income', color: '#15803d', icon: 'fa-heart' },
+  { id: 'cat_in_3', name: 'Venda de Plantas e Mudas', type: 'income', color: '#10b981', icon: 'fa-seedling' },
+  { id: 'cat_in_4', name: 'Oficinas e Vivências', type: 'income', color: '#059669', icon: 'fa-chalkboard-user' },
+  { id: 'cat_in_5', name: 'Bazar e Eventos', type: 'income', color: '#0d9488', icon: 'fa-store' },
+  { id: 'cat_in_6', name: 'Outras Entradas', type: 'income', color: '#047857', icon: 'fa-arrow-down-long' },
+
+  // Saídas
+  { id: 'cat_out_1', name: 'Insumos, Terra e Jardinagem', type: 'expense', color: '#166534', icon: 'fa-spa' },
+  { id: 'cat_out_2', name: 'Manutenção do Espaço', type: 'expense', color: '#ca8a04', icon: 'fa-hammer' },
+  { id: 'cat_out_3', name: 'Água e Saneamento', type: 'expense', color: '#0284c7', icon: 'fa-droplet' },
+  { id: 'cat_out_4', name: 'Energia Elétrica', type: 'expense', color: '#eab308', icon: 'fa-bolt' },
+  { id: 'cat_out_5', name: 'Internet e Comunicação', type: 'expense', color: '#6366f1', icon: 'fa-wifi' },
+  { id: 'cat_out_6', name: 'Alimentação e Cozinha Comunitária', type: 'expense', color: '#ea580c', icon: 'fa-utensils' },
+  { id: 'cat_out_7', name: 'Materiais de Limpeza e Higiene', type: 'expense', color: '#06b6d4', icon: 'fa-soap' },
+  { id: 'cat_out_8', name: 'Ferramentas e Equipamentos', type: 'expense', color: '#64748b', icon: 'fa-screwdriver-wrench' },
+  { id: 'cat_out_9', name: 'Outras Saídas', type: 'expense', color: '#dc2626', icon: 'fa-arrow-up-long' }
+];
+
+const DEFAULT_FIXED_COSTS = [
+  { id: 'fc_1', name: 'Conta de Água / Saneamento', amount: 85.00, dueDay: 10, type: 'expense', category: 'Água e Saneamento', active: true, notes: 'Vencimento todo dia 10' },
+  { id: 'fc_2', name: 'Energia Elétrica', amount: 160.00, dueDay: 15, type: 'expense', category: 'Energia Elétrica', active: true, notes: 'Medidor do jardim e sede' },
+  { id: 'fc_3', name: 'Internet / Wi-Fi', amount: 99.90, dueDay: 20, type: 'expense', category: 'Internet e Comunicação', active: true, notes: 'Fibra óptica da sede' },
+  { id: 'fc_4', name: 'Manutenção Preventiva de Irrigação', amount: 75.00, dueDay: 5, type: 'expense', category: 'Manutenção do Espaço', active: true, notes: 'Revisão periódica de aspersores' }
+];
+
+const DEFAULT_SETTINGS = {
+  organizationName: 'Núcleo Jardim Florido',
+  currency: 'BRL',
+  initialBalance: 0.00,
+  createdAt: '2026-08-01'
+};
+
+const StorageManager = {
+  // Inicialização
+  init() {
+    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
+      this.saveCategories(DEFAULT_CATEGORIES);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.FIXED_COSTS)) {
+      this.saveFixedCosts(DEFAULT_FIXED_COSTS);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+      this.saveSettings(DEFAULT_SETTINGS);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.TRANSACTIONS)) {
+      this.seedInitialTransactions();
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.FIXED_CONFIRMATIONS)) {
+      localStorage.setItem(STORAGE_KEYS.FIXED_CONFIRMATIONS, JSON.stringify([]));
+    }
+  },
+
+  // Amostra inicial de dados
+  seedInitialTransactions() {
+    const currentYearMonth = new Date().toISOString().slice(0, 7); // '2026-08'
+    const samples = [
+      {
+        id: 'tx_seed_1',
+        description: 'Contribuição Mensal - Sócios Fundadores',
+        amount: 350.00,
+        type: 'income',
+        category: 'Mensalidades / Contribuições',
+        date: `${currentYearMonth}-02`,
+        paymentMethod: 'Pix',
+        status: 'completed',
+        notes: 'Repasse mensal',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'tx_seed_2',
+        description: 'Venda de Mudas de Ervas Aromáticas',
+        amount: 145.00,
+        type: 'income',
+        category: 'Venda de Plantas e Mudas',
+        date: `${currentYearMonth}-08`,
+        paymentMethod: 'Dinheiro',
+        status: 'completed',
+        notes: 'Feirinha de sábado',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'tx_seed_3',
+        description: 'Compra de Substrato Orgânico e Adubo',
+        amount: 120.00,
+        type: 'expense',
+        category: 'Insumos, Terra e Jardinagem',
+        date: `${currentYearMonth}-09`,
+        paymentMethod: 'Pix',
+        status: 'completed',
+        notes: '3 sacos de 25kg',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'tx_seed_4',
+        description: 'Conta de Água / Saneamento (Confirmado)',
+        amount: 85.00,
+        type: 'expense',
+        category: 'Água e Saneamento',
+        date: `${currentYearMonth}-10`,
+        paymentMethod: 'Boleto',
+        status: 'completed',
+        isFixedCost: true,
+        fixedCostId: 'fc_1',
+        notes: 'Pago pontualmente',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'tx_seed_5',
+        description: 'Doação para Reforma do Canteiro Central',
+        amount: 200.00,
+        type: 'income',
+        category: 'Doações e Apadrinhamentos',
+        date: `${currentYearMonth}-16`,
+        paymentMethod: 'Pix',
+        status: 'completed',
+        notes: 'Doação anônima',
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    this.saveTransactions(samples);
+    // Registrar confirmação de custo fixo seed
+    const confs = [
+      {
+        id: 'conf_seed_1',
+        fixedCostId: 'fc_1',
+        yearMonth: currentYearMonth,
+        transactionId: 'tx_seed_4',
+        confirmedDate: `${currentYearMonth}-10`,
+        amount: 85.00
+      }
+    ];
+    localStorage.setItem(STORAGE_KEYS.FIXED_CONFIRMATIONS, JSON.stringify(confs));
+  },
+
+  // Transações
+  getTransactions() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      console.error('Erro ao ler transações:', e);
+      return [];
+    }
+  },
+
+  saveTransactions(transactions) {
+    localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
+  },
+
+  addTransaction(tx) {
+    const transactions = this.getTransactions();
+    const newTx = {
+      ...tx,
+      id: tx.id || 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      createdAt: new Date().toISOString()
+    };
+    transactions.unshift(newTx);
+    this.saveTransactions(transactions);
+    return newTx;
+  },
+
+  updateTransaction(id, updatedFields) {
+    const transactions = this.getTransactions();
+    const index = transactions.findIndex(t => t.id === id);
+    if (index !== -1) {
+      transactions[index] = { ...transactions[index], ...updatedFields };
+      this.saveTransactions(transactions);
+      return transactions[index];
+    }
+    return null;
+  },
+
+  deleteTransaction(id) {
+    let transactions = this.getTransactions();
+    transactions = transactions.filter(t => t.id !== id);
+    this.saveTransactions(transactions);
+
+    // Se estiver associada a uma confirmação de custo fixo, remover a confirmação
+    let confs = this.getFixedCostConfirmations();
+    confs = confs.filter(c => c.transactionId !== id);
+    this.saveFixedCostConfirmations(confs);
+  },
+
+  // Custos Fixos
+  getFixedCosts() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.FIXED_COSTS);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      console.error('Erro ao ler custos fixos:', e);
+      return [];
+    }
+  },
+
+  saveFixedCosts(fixedCosts) {
+    localStorage.setItem(STORAGE_KEYS.FIXED_COSTS, JSON.stringify(fixedCosts));
+  },
+
+  addFixedCost(fc) {
+    const fixedCosts = this.getFixedCosts();
+    const newFc = {
+      ...fc,
+      id: fc.id || 'fc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      active: fc.active !== false
+    };
+    fixedCosts.push(newFc);
+    this.saveFixedCosts(fixedCosts);
+    return newFc;
+  },
+
+  updateFixedCost(id, updatedFields) {
+    const fixedCosts = this.getFixedCosts();
+    const index = fixedCosts.findIndex(f => f.id === id);
+    if (index !== -1) {
+      fixedCosts[index] = { ...fixedCosts[index], ...updatedFields };
+      this.saveFixedCosts(fixedCosts);
+      return fixedCosts[index];
+    }
+    return null;
+  },
+
+  deleteFixedCost(id) {
+    const fixedCosts = this.getFixedCosts().filter(f => f.id !== id);
+    this.saveFixedCosts(fixedCosts);
+
+    const transactionIds = this.getTransactions()
+      .filter(t => t.fixedCostId === id)
+      .map(t => t.id);
+    this.saveTransactions(this.getTransactions().filter(t => t.fixedCostId !== id));
+    this.saveFixedCostConfirmations(
+      this.getFixedCostConfirmations().filter(c => c.fixedCostId !== id && !transactionIds.includes(c.transactionId))
+    );
+  },
+
+  // Confirmações de Custos Fixos por Mês (Confirmação Manual)
+  getFixedCostConfirmations() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.FIXED_CONFIRMATIONS);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  saveFixedCostConfirmations(confs) {
+    localStorage.setItem(STORAGE_KEYS.FIXED_CONFIRMATIONS, JSON.stringify(confs));
+  },
+
+  isFixedCostConfirmed(fixedCostId, yearMonth) {
+    const confs = this.getFixedCostConfirmations();
+    return confs.some(c => c.fixedCostId === fixedCostId && c.yearMonth === yearMonth);
+  },
+
+  getFixedCostConfirmation(fixedCostId, yearMonth) {
+    const confs = this.getFixedCostConfirmations();
+    return confs.find(c => c.fixedCostId === fixedCostId && c.yearMonth === yearMonth);
+  },
+
+  confirmFixedCost(fixedCostId, yearMonth, paymentDate, actualAmount, paymentMethod = 'Pix', notes = '') {
+    const fixedCosts = this.getFixedCosts();
+    const fc = fixedCosts.find(f => f.id === fixedCostId);
+    if (!fc) return null;
+
+    const amount = actualAmount !== undefined ? parseFloat(actualAmount) : parseFloat(fc.amount);
+
+    // 1. Criar transação no fluxo de caixa
+    const tx = this.addTransaction({
+      description: `${fc.name} (Custo Fixo)`,
+      amount: amount,
+      type: fc.type || 'expense',
+      category: fc.category,
+      date: paymentDate,
+      paymentMethod: paymentMethod,
+      status: 'completed',
+      isFixedCost: true,
+      fixedCostId: fc.id,
+      notes: notes || `Confirmado para o mês de ${yearMonth}`
+    });
+
+    // 2. Gravar registro de confirmação
+    const confs = this.getFixedCostConfirmations();
+    confs.push({
+      id: 'conf_' + Date.now(),
+      fixedCostId: fc.id,
+      yearMonth: yearMonth,
+      transactionId: tx.id,
+      confirmedDate: paymentDate,
+      amount: amount
+    });
+    this.saveFixedCostConfirmations(confs);
+
+    return tx;
+  },
+
+  unconfirmFixedCost(fixedCostId, yearMonth) {
+    let confs = this.getFixedCostConfirmations();
+    const conf = confs.find(c => c.fixedCostId === fixedCostId && c.yearMonth === yearMonth);
+    if (conf) {
+      // Excluir a transação gerada
+      if (conf.transactionId) {
+        this.deleteTransaction(conf.transactionId);
+      }
+      confs = confs.filter(c => !(c.fixedCostId === fixedCostId && c.yearMonth === yearMonth));
+      this.saveFixedCostConfirmations(confs);
+      return true;
+    }
+    return false;
+  },
+
+  // Categorias
+  getCategories() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      return data ? JSON.parse(data) : DEFAULT_CATEGORIES;
+    } catch (e) {
+      return DEFAULT_CATEGORIES;
+    }
+  },
+
+  saveCategories(categories) {
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+  },
+
+  addCategory(cat) {
+    const categories = this.getCategories();
+    const newCat = {
+      ...cat,
+      id: cat.id || 'cat_' + Date.now()
+    };
+    categories.push(newCat);
+    this.saveCategories(categories);
+    return newCat;
+  },
+
+  deleteCategory(id) {
+    let categories = this.getCategories();
+    categories = categories.filter(c => c.id !== id);
+    this.saveCategories(categories);
+  },
+
+  // Configurações
+  getSettings() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      return data ? JSON.parse(data) : DEFAULT_SETTINGS;
+    } catch (e) {
+      return DEFAULT_SETTINGS;
+    }
+  },
+
+  saveSettings(settings) {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  },
+
+  // Backup e Restauração
+  exportAllData() {
+    const backup = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      organization: 'Núcleo Jardim Florido',
+      transactions: this.getTransactions(),
+      fixedCosts: this.getFixedCosts(),
+      fixedConfirmations: this.getFixedCostConfirmations(),
+      categories: this.getCategories(),
+      settings: this.getSettings()
+    };
+    return JSON.stringify(backup, null, 2);
+  },
+
+  importAllData(jsonString) {
+    try {
+      const data = JSON.parse(jsonString);
+      if (!data.transactions || !data.categories) {
+        throw new Error('Arquivo de backup inválido.');
+      }
+      if (data.transactions) this.saveTransactions(data.transactions);
+      if (data.fixedCosts) this.saveFixedCosts(data.fixedCosts);
+      if (data.fixedConfirmations) this.saveFixedCostConfirmations(data.fixedConfirmations);
+      if (data.categories) this.saveCategories(data.categories);
+      if (data.settings) this.saveSettings(data.settings);
+      return true;
+    } catch (e) {
+      console.error('Falha na importação:', e);
+      return false;
+    }
+  },
+
+  resetAllData() {
+    localStorage.clear();
+    this.saveCategories(DEFAULT_CATEGORIES);
+    this.saveFixedCosts(DEFAULT_FIXED_COSTS);
+    this.saveSettings(DEFAULT_SETTINGS);
+    this.saveTransactions([]);
+    this.saveFixedCostConfirmations([]);
+  }
+};
+
+// Executar inicialização automática
+StorageManager.init();
+
+
+/**
+ * Módulo de Calendário Interativo - Núcleo Jardim Florido
+ */
+
+const CalendarManager = {
+  currentDate: new Date(),
+  selectedDateStr: null, // 'YYYY-MM-DD'
+
+  init() {
+    this.selectedDateStr = this.formatDateISO(new Date());
+    this.render();
+  },
+
+  formatDateISO(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  },
+
+  parseDateISO(dateStr) {
+    const parts = dateStr.split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  },
+
+  prevMonth() {
+    this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+    this.render();
+  },
+
+  nextMonth() {
+    this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+    this.render();
+  },
+
+  goToToday() {
+    this.currentDate = new Date();
+    this.selectedDateStr = this.formatDateISO(new Date());
+    this.render();
+  },
+
+  selectDate(dateStr) {
+    this.selectedDateStr = dateStr;
+    this.renderGrid();
+    this.renderDayDetails();
+  },
+
+  render() {
+    this.renderHeader();
+    this.renderGrid();
+    this.renderDayDetails();
+  },
+
+  renderHeader() {
+    const titleEl = document.getElementById('calendar-month-year-title');
+    if (!titleEl) return;
+
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const month = monthNames[this.currentDate.getMonth()];
+    const year = this.currentDate.getFullYear();
+    titleEl.textContent = `${month} de ${year}`;
+  },
+
+  renderGrid() {
+    const gridEl = document.getElementById('calendar-grid');
+    if (!gridEl) return;
+
+    gridEl.innerHTML = '';
+
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    const currentYearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+    // Primeiro dia do mês e total de dias
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Domingo
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const todayStr = this.formatDateISO(new Date());
+    const transactions = StorageManager.getTransactions();
+    const fixedCosts = StorageManager.getFixedCosts().filter(fc => fc.active);
+
+    // Mapear transações por data
+    const txByDate = {};
+    transactions.forEach(tx => {
+      if (!txByDate[tx.date]) {
+        txByDate[tx.date] = { income: 0, expense: 0, items: [] };
+      }
+      if (tx.type === 'income') {
+        txByDate[tx.date].income += parseFloat(tx.amount || 0);
+      } else {
+        txByDate[tx.date].expense += parseFloat(tx.amount || 0);
+      }
+      txByDate[tx.date].items.push(tx);
+    });
+
+    // Dias do mês anterior para preenchimento
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const prevDayNum = daysInPrevMonth - i;
+      const prevCell = document.createElement('div');
+      prevCell.className = 'calendar-day-cell p-1.5 md:p-2 text-slate-300 text-center rounded-xl bg-slate-50/50 flex flex-col items-center justify-start text-xs border border-transparent';
+      prevCell.innerHTML = `<span>${prevDayNum}</span>`;
+      gridEl.appendChild(prevCell);
+    }
+
+    // Dias do mês atual
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayStr = `${currentYearMonth}-${String(day).padStart(2, '0')}`;
+      const isToday = dayStr === todayStr;
+      const isSelected = dayStr === this.selectedDateStr;
+
+      const dayData = txByDate[dayStr];
+      const hasIncome = dayData && dayData.income > 0;
+      const hasExpense = dayData && dayData.expense > 0;
+
+      // Verificar custos fixos com vencimento neste dia
+      const dueFixedCosts = fixedCosts.filter(fc => fc.dueDay === day);
+      const hasFixedDue = dueFixedCosts.length > 0;
+
+      const cell = document.createElement('div');
+      let baseClasses = 'calendar-day-cell p-1.5 md:p-2 rounded-xl text-center flex flex-col items-center justify-between cursor-pointer border transition-all-custom select-none ';
+      
+      if (isSelected) {
+        baseClasses += 'calendar-day-selected shadow-md border-emerald-700 ';
+      } else if (isToday) {
+        baseClasses += 'bg-emerald-50 border-emerald-400 text-emerald-900 font-semibold shadow-xs ';
+      } else {
+        baseClasses += 'bg-white border-slate-100 text-slate-700 hover:border-emerald-200 ';
+      }
+
+      cell.className = baseClasses;
+      cell.onclick = () => this.selectDate(dayStr);
+
+      // Conteúdo da célula
+      let dotsHtml = '<div class="flex items-center gap-1 mt-1">';
+      if (hasIncome) {
+        dotsHtml += `<span class="w-2 h-2 rounded-full ${isSelected ? 'bg-emerald-200 ring-1 ring-white' : 'bg-emerald-500'}" title="Entrada"></span>`;
+      }
+      if (hasExpense) {
+        dotsHtml += `<span class="w-2 h-2 rounded-full ${isSelected ? 'bg-rose-200 ring-1 ring-white' : 'bg-rose-500'}" title="Saída"></span>`;
+      }
+      if (hasFixedDue) {
+        dotsHtml += `<span class="w-2 h-2 rounded-full ${isSelected ? 'bg-amber-200 ring-1 ring-white' : 'bg-amber-500'}" title="Custo Fixo"></span>`;
+      }
+      dotsHtml += '</div>';
+
+      let miniBalanceHtml = '';
+      if (dayData && (hasIncome || hasExpense)) {
+        const net = dayData.income - dayData.expense;
+        const netSign = net >= 0 ? '+' : '';
+        const netColor = isSelected ? 'text-emerald-100' : (net >= 0 ? 'text-emerald-700' : 'text-rose-600');
+        miniBalanceHtml = `<span class="text-[9px] font-medium leading-none ${netColor} hidden md:inline-block">${netSign}R$${Math.abs(net).toFixed(0)}</span>`;
+      }
+
+      cell.innerHTML = `
+        <div class="flex items-center justify-between w-full">
+          <span class="day-number text-xs md:text-sm font-medium ${isToday && !isSelected ? 'text-emerald-700 font-bold' : ''}">${day}</span>
+          ${isToday && !isSelected ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>' : ''}
+        </div>
+        ${dotsHtml}
+        ${miniBalanceHtml}
+      `;
+
+      gridEl.appendChild(cell);
+    }
+
+    // Dias do próximo mês para completar grid de 7 colunas
+    const totalCellsSoFar = firstDayIndex + daysInMonth;
+    const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
+    for (let j = 1; j <= remainingCells; j++) {
+      const nextCell = document.createElement('div');
+      nextCell.className = 'calendar-day-cell p-1.5 md:p-2 text-slate-300 text-center rounded-xl bg-slate-50/50 flex flex-col items-center justify-start text-xs border border-transparent';
+      nextCell.innerHTML = `<span>${j}</span>`;
+      gridEl.appendChild(nextCell);
+    }
+  },
+
+  renderDayDetails() {
+    const detailsContainer = document.getElementById('calendar-day-details');
+    if (!detailsContainer) return;
+
+    if (!this.selectedDateStr) {
+      detailsContainer.innerHTML = `
+        <div class="p-6 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <i class="fa-regular fa-calendar-days text-3xl mb-2 text-slate-300"></i>
+          <p class="text-sm">Toque em um dia do calendário para ver e registrar movimentações.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const dateObj = this.parseDateISO(this.selectedDateStr);
+    const day = dateObj.getDate();
+    const month = dateObj.toLocaleDateString('pt-BR', { month: 'long' });
+    const year = dateObj.getFullYear();
+    const weekday = dateObj.toLocaleDateString('pt-BR', { weekday: 'long' });
+    const formattedDate = `${day} de ${month} de ${year} (${weekday})`;
+
+    const transactions = StorageManager.getTransactions().filter(t => t.date === this.selectedDateStr);
+    const yearMonth = this.selectedDateStr.slice(0, 7);
+
+    // Custos fixos deste dia
+    const fixedCostsDueToday = StorageManager.getFixedCosts().filter(fc => fc.active && fc.dueDay === day);
+
+    let totalDayIncome = 0;
+    let totalDayExpense = 0;
+    transactions.forEach(t => {
+      if (t.type === 'income') totalDayIncome += parseFloat(t.amount || 0);
+      else totalDayExpense += parseFloat(t.amount || 0);
+    });
+    const dayBalance = totalDayIncome - totalDayExpense;
+
+    let html = `
+      <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm animate-fade-in">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <span class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Movimentações do Dia</span>
+            <h3 class="text-base md:text-lg font-bold text-slate-800 capitalize">${formattedDate}</h3>
+          </div>
+          <button onclick="App.openTransactionModalWithDate('${this.selectedDateStr}')" 
+                  class="inline-flex items-center justify-center gap-2 px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs md:text-sm font-medium rounded-xl shadow-sm transition-all-custom">
+            <i class="fa-solid fa-plus"></i>
+            <span>Novo Lançamento</span>
+          </button>
+        </div>
+
+        <!-- Resumo do Dia -->
+        <div class="grid grid-cols-3 gap-2 my-4">
+          <div class="bg-emerald-50 p-2.5 rounded-xl text-center border border-emerald-100">
+            <span class="text-[11px] text-emerald-700 font-medium block">Entradas</span>
+            <span class="text-xs md:text-sm font-bold text-emerald-800">R$ ${totalDayIncome.toFixed(2)}</span>
+          </div>
+          <div class="bg-rose-50 p-2.5 rounded-xl text-center border border-rose-100">
+            <span class="text-[11px] text-rose-700 font-medium block">Saídas</span>
+            <span class="text-xs md:text-sm font-bold text-rose-800">R$ ${totalDayExpense.toFixed(2)}</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl text-center border border-slate-200">
+            <span class="text-[11px] text-slate-600 font-medium block">Saldo do Dia</span>
+            <span class="text-xs md:text-sm font-bold ${dayBalance >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+              ${dayBalance >= 0 ? '+' : ''}R$ ${dayBalance.toFixed(2)}
+            </span>
+          </div>
+        </div>
+    `;
+
+    // Seção de Custos Fixos com vencimento neste dia
+    if (fixedCostsDueToday.length > 0) {
+      html += `
+        <div class="mb-4">
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-bell text-amber-500"></i>
+            Custos Fixos com Vencimento Hoje (${day})
+          </h4>
+          <div class="space-y-2">
+      `;
+
+      fixedCostsDueToday.forEach(fc => {
+        const isConfirmed = StorageManager.isFixedCostConfirmed(fc.id, yearMonth);
+        html += `
+          <div class="flex items-center justify-between p-3 rounded-xl border ${isConfirmed ? 'bg-emerald-50/40 border-emerald-200' : 'bg-amber-50/40 border-amber-200'}">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center ${isConfirmed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                <i class="fa-solid ${isConfirmed ? 'fa-check' : 'fa-calendar-day'} text-xs"></i>
+              </div>
+              <div>
+                <p class="text-xs md:text-sm font-semibold text-slate-800">${fc.name}</p>
+                <p class="text-[11px] text-slate-500">${fc.category} • Vence dia ${fc.dueDay}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-right">
+              <span class="text-xs md:text-sm font-bold text-slate-800">R$ ${parseFloat(fc.amount).toFixed(2)}</span>
+              ${isConfirmed ? `
+                <span class="text-[11px] px-2 py-1 bg-emerald-100 text-emerald-800 font-medium rounded-lg">Pago</span>
+              ` : `
+                <button onclick="App.openConfirmFixedCostModal('${fc.id}', '${yearMonth}', '${this.selectedDateStr}')" 
+                        class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg shadow-xs">
+                  Confirmar
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div>`;
+    }
+
+    // Lista de Lançamentos do Dia
+    html += `
+      <div>
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-list-check text-emerald-600"></i>
+          Lançamentos Registrados (${transactions.length})
+        </h4>
+    `;
+
+    if (transactions.length === 0) {
+      html += `
+        <div class="py-6 text-center text-slate-400 bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+          <p class="text-xs">Nenhum lançamento registrado nesta data.</p>
+        </div>
+      `;
+    } else {
+      html += `<div class="space-y-2">`;
+      transactions.forEach(t => {
+        const isIncome = t.type === 'income';
+        html += `
+          <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 hover:border-slate-200 shadow-xs transition-all-custom">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center ${isIncome ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                <i class="fa-solid ${isIncome ? 'fa-arrow-down' : 'fa-arrow-up'} text-xs"></i>
+              </div>
+              <div>
+                <p class="text-xs md:text-sm font-semibold text-slate-800">${t.description}</p>
+                <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                  <span>${t.category}</span>
+                  <span>•</span>
+                  <span>${t.paymentMethod || 'Pix'}</span>
+                  ${t.isFixedCost ? '<span class="text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded text-[10px]">Fixo</span>' : ''}
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs md:text-sm font-bold ${isIncome ? 'text-emerald-700' : 'text-rose-700'}">
+                ${isIncome ? '+' : '-'} R$ ${parseFloat(t.amount).toFixed(2)}
+              </span>
+              <button onclick="App.deleteTransactionConfirm('${t.id}')" class="text-slate-400 hover:text-rose-600 p-1 transition-colors" title="Excluir">
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+    detailsContainer.innerHTML = html;
+  }
+};
+
+
+/**
+ * Módulo de Gráficos Financeiros (Chart.js) - Núcleo Jardim Florido
+ */
+
+const ChartsManager = {
+  cashflowChartInstance: null,
+  expensesCategoryChartInstance: null,
+  incomeCategoryChartInstance: null,
+
+  // Inicializa ou atualiza os gráficos
+  updateAllCharts(selectedYearMonth) {
+    this.renderCashflowEvolutionChart(selectedYearMonth);
+    this.renderExpensesCategoryChart(selectedYearMonth);
+  },
+
+  // Gráfico de Evolução / Comparativo (Entradas vs Saídas)
+  renderCashflowEvolutionChart(selectedYearMonth) {
+    const canvas = document.getElementById('chart-cashflow-evolution');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const transactions = StorageManager.getTransactions();
+
+    // Obter os últimos 6 meses para histórico comparativo
+    const labels = [];
+    const incomeData = [];
+    const expenseData = [];
+
+    const date = new Date();
+    if (selectedYearMonth) {
+      const parts = selectedYearMonth.split('-');
+      date.setFullYear(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+    }
+
+    const monthNamesShort = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(date.getFullYear(), date.getMonth() - i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      labels.push(`${monthNamesShort[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`);
+
+      let mIncome = 0;
+      let mExpense = 0;
+
+      transactions.forEach(t => {
+        if (t.date && t.date.startsWith(ym)) {
+          if (t.type === 'income') mIncome += parseFloat(t.amount || 0);
+          else mExpense += parseFloat(t.amount || 0);
+        }
+      });
+
+      incomeData.push(mIncome);
+      expenseData.push(mExpense);
+    }
+
+    if (this.cashflowChartInstance) {
+      this.cashflowChartInstance.destroy();
+    }
+
+    this.cashflowChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Entradas (R$)',
+            data: incomeData,
+            backgroundColor: '#16a34a',
+            borderRadius: 6,
+            barPercentage: 0.7,
+            categoryPercentage: 0.8
+          },
+          {
+            label: 'Saídas (R$)',
+            data: expenseData,
+            backgroundColor: '#ef4444',
+            borderRadius: 6,
+            barPercentage: 0.7,
+            categoryPercentage: 0.8
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              usePointStyle: true,
+              font: { size: 11, family: "'Segoe UI', sans-serif" }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: R$ ${context.parsed.y.toFixed(2)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11 } }
+          },
+          y: {
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              font: { size: 10 },
+              callback: function(value) { return 'R$ ' + value; }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  // Gráfico de Despesas por Categoria
+  renderExpensesCategoryChart(selectedYearMonth) {
+    const canvas = document.getElementById('chart-expenses-category');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const transactions = StorageManager.getTransactions().filter(t => 
+      t.type === 'expense' && (!selectedYearMonth || t.date.startsWith(selectedYearMonth))
+    );
+
+    const categoryTotals = {};
+    transactions.forEach(t => {
+      const cat = t.category || 'Outras Saídas';
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(t.amount || 0);
+    });
+
+    const labels = Object.keys(categoryTotals);
+    const data = Object.values(categoryTotals);
+
+    // Cores temáticas elegantes
+    const palette = [
+      '#15803d', '#ca8a04', '#0284c7', '#ea580c', '#eab308',
+      '#6366f1', '#06b6d4', '#dc2626', '#10b981', '#64748b'
+    ];
+
+    if (this.expensesCategoryChartInstance) {
+      this.expensesCategoryChartInstance.destroy();
+    }
+
+    if (labels.length === 0) {
+      // Estado vazio
+      this.expensesCategoryChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Sem despesas no período'],
+          datasets: [{
+            data: [1],
+            backgroundColor: ['#e2e8f0']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'bottom' },
+            tooltip: { enabled: false }
+          },
+          cutout: '70%'
+        }
+      });
+      return;
+    }
+
+    this.expensesCategoryChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: palette.slice(0, labels.length),
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 10,
+              usePointStyle: true,
+              font: { size: 11 }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = context.parsed;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = ((val / total) * 100).toFixed(1);
+                return `${context.label}: R$ ${val.toFixed(2)} (${pct}%)`;
+              }
+            }
+          }
+        },
+        cutout: '65%'
+      }
+    });
+  }
+};
+
+
+/**
+ * Módulo de Relatórios, Exportação em PDF e Compartilhamento via WhatsApp
+ * Núcleo Jardim Florido
+ */
+
+const ReportsManager = {
+  // Obter dados consolidados de um período (YYYY-MM)
+  getPeriodData(yearMonth) {
+    const transactions = StorageManager.getTransactions();
+    const fixedCosts = StorageManager.getFixedCosts().filter(fc => fc.active);
+    const settings = StorageManager.getSettings();
+
+    // Filtrar transações do período
+    const periodTransactions = transactions.filter(t => !yearMonth || t.date.startsWith(yearMonth));
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+    const categoryTotals = {};
+
+    periodTransactions.forEach(t => {
+      const amount = parseFloat(t.amount || 0);
+      if (t.type === 'income') {
+        totalIncome += amount;
+      } else {
+        totalExpense += amount;
+        const cat = t.category || 'Outras Saídas';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + amount;
+      }
+    });
+
+    const netPeriod = totalIncome - totalExpense;
+
+    // Calcular saldo acumulado total histórico
+    let cumulativeBalance = parseFloat(settings.initialBalance || 0);
+    transactions.forEach(t => {
+      const amount = parseFloat(t.amount || 0);
+      if (t.type === 'income') cumulativeBalance += amount;
+      else cumulativeBalance -= amount;
+    });
+
+    // Custos fixos do período (status pagos vs pendentes)
+    let fixedPaidTotal = 0;
+    let fixedPendingTotal = 0;
+    let fixedPaidCount = 0;
+    let fixedPendingCount = 0;
+    const fixedDetails = [];
+
+    fixedCosts.forEach(fc => {
+      const isConfirmed = StorageManager.isFixedCostConfirmed(fc.id, yearMonth);
+      const amount = parseFloat(fc.amount || 0);
+      if (isConfirmed) {
+        fixedPaidTotal += amount;
+        fixedPaidCount++;
+      } else {
+        fixedPendingTotal += amount;
+        fixedPendingCount++;
+      }
+      fixedDetails.push({
+        name: fc.name,
+        dueDay: fc.dueDay,
+        amount: amount,
+        category: fc.category,
+        isConfirmed: isConfirmed
+      });
+    });
+
+    // Top categorias de despesas
+    const topExpenseCategories = Object.entries(categoryTotals)
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total);
+
+    return {
+      yearMonth,
+      totalIncome,
+      totalExpense,
+      netPeriod,
+      cumulativeBalance,
+      transactions: periodTransactions,
+      fixedPaidTotal,
+      fixedPendingTotal,
+      fixedPaidCount,
+      fixedPendingCount,
+      fixedDetails,
+      topExpenseCategories
+    };
+  },
+
+  formatCurrency(value) {
+    return 'R$ ' + parseFloat(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  },
+
+  getMonthName(yearMonth) {
+    if (!yearMonth) return 'Geral';
+    const [year, month] = yearMonth.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  },
+
+  // Gerar texto formatado para WhatsApp
+  generateWhatsAppText(yearMonth) {
+    const data = this.getPeriodData(yearMonth);
+    const monthLabel = this.getMonthName(yearMonth).toUpperCase();
+
+    let text = `🌿 *NÚCLEO JARDIM FLORIDO*\n`;
+    text += `📊 *RELATÓRIO DE FLUXO DE CAIXA*\n`;
+    text += `📅 *Período:* ${monthLabel}\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+    text += `💰 *RESUMO FINANCEIRO:*\n`;
+    text += `• (+) *Entradas:* ${this.formatCurrency(data.totalIncome)}\n`;
+    text += `• (-) *Saídas:* ${this.formatCurrency(data.totalExpense)}\n`;
+    text += `• (=) *Resultado do Mês:* ${data.netPeriod >= 0 ? '+' : ''}${this.formatCurrency(data.netPeriod)}\n`;
+    text += `• 🏦 *Saldo Geral em Caixa:* ${this.formatCurrency(data.cumulativeBalance)}\n\n`;
+
+    text += `📌 *CUSTOS FIXOS:*\n`;
+    text += `• ✅ Pagos: ${this.formatCurrency(data.fixedPaidTotal)} (${data.fixedPaidCount} itens)\n`;
+    if (data.fixedPendingCount > 0) {
+      text += `• ⏳ Pendentes: ${this.formatCurrency(data.fixedPendingTotal)} (${data.fixedPendingCount} itens)\n`;
+    } else {
+      text += `• ⏳ Pendentes: Nenhum pendente no mês 🎉\n`;
+    }
+    text += `\n`;
+
+    if (data.topExpenseCategories.length > 0) {
+      text += `🏷️ *MAIORES DESPESAS POR CATEGORIA:*\n`;
+      data.topExpenseCategories.slice(0, 4).forEach(cat => {
+        text += `• ${cat.name}: ${this.formatCurrency(cat.total)}\n`;
+      });
+      text += `\n`;
+    }
+
+    text += `📝 *Total de Lançamentos:* ${data.transactions.length} registros\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `_Gerado pelo App de Fluxo de Caixa do Núcleo Jardim Florido_`;
+
+    return text;
+  },
+
+  // Compartilhar via WhatsApp (abre o aplicativo com o texto preenchido)
+  shareViaWhatsApp(yearMonth) {
+    const text = this.generateWhatsAppText(yearMonth);
+    const encodedText = encodeURIComponent(text);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
+    window.open(whatsappUrl, '_blank');
+  },
+
+  // Copiar texto do WhatsApp para a área de transferência
+  copyWhatsAppText(yearMonth) {
+    const text = this.generateWhatsAppText(yearMonth);
+    navigator.clipboard.writeText(text).then(() => {
+      App.showToast('Resumo copiado para a área de transferência!', 'success');
+    }).catch(err => {
+      console.error('Erro ao copiar:', err);
+      App.showToast('Não foi possível copiar automaticamente.', 'error');
+    });
+  },
+
+  // Gerar e Exportar PDF
+  exportPDFReport(yearMonth) {
+    const data = this.getPeriodData(yearMonth);
+    const monthLabel = this.getMonthName(yearMonth);
+
+    const printContainer = document.getElementById('report-print-container');
+    if (!printContainer) return;
+
+    let html = `
+      <div style="font-family: Arial, sans-serif; color: #1e293b; padding: 20px; max-width: 800px; margin: 0 auto; background: #ffffff;">
+        <!-- Cabeçalho -->
+        <div style="border-bottom: 2px solid #15803d; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h1 style="color: #15803d; font-size: 24px; margin: 0; font-weight: bold; letter-spacing: -0.5px;">🌿 Núcleo Jardim Florido</h1>
+            <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px; font-weight: 500;">Relatório Consolidado de Fluxo de Caixa</p>
+          </div>
+          <div style="text-align: right;">
+            <span style="display: inline-block; background-color: #f0fdf4; color: #166534; padding: 4px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; border: 1px solid #bbf7d0;">
+              ${monthLabel.toUpperCase()}
+            </span>
+            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 11px;">Emitido em: ${new Date().toLocaleDateString('pt-BR')}</p>
+          </div>
+        </div>
+
+        <!-- Cards de Resumo -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px;">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; text-align: center;">
+            <span style="display: block; font-size: 11px; color: #166534; font-weight: 600;">TOTAL ENTRADAS</span>
+            <span style="display: block; font-size: 16px; color: #15803d; font-weight: bold; margin-top: 4px;">${this.formatCurrency(data.totalIncome)}</span>
+          </div>
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;">
+            <span style="display: block; font-size: 11px; color: #991b1b; font-weight: 600;">TOTAL SAÍDAS</span>
+            <span style="display: block; font-size: 16px; color: #dc2626; font-weight: bold; margin-top: 4px;">${this.formatCurrency(data.totalExpense)}</span>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center;">
+            <span style="display: block; font-size: 11px; color: #475569; font-weight: 600;">RESULTADO DO MÊS</span>
+            <span style="display: block; font-size: 16px; color: ${data.netPeriod >= 0 ? '#15803d' : '#dc2626'}; font-weight: bold; margin-top: 4px;">
+              ${data.netPeriod >= 0 ? '+' : ''}${this.formatCurrency(data.netPeriod)}
+            </span>
+          </div>
+          <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; text-align: center;">
+            <span style="display: block; font-size: 11px; color: #065f46; font-weight: 600;">SALDO EM CAIXA</span>
+            <span style="display: block; font-size: 16px; color: #047857; font-weight: bold; margin-top: 4px;">${this.formatCurrency(data.cumulativeBalance)}</span>
+          </div>
+        </div>
+
+        <!-- Seção de Custos Fixos -->
+        <div style="margin-bottom: 25px;">
+          <h2 style="font-size: 14px; color: #334155; margin: 0 0 10px 0; text-transform: uppercase; font-weight: bold; border-left: 4px solid #15803d; padding-left: 8px;">
+            Acompanhamento de Custos Fixos do Mês
+          </h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 1px solid #cbd5e1; text-align: left;">
+                <th style="padding: 8px;">Status</th>
+                <th style="padding: 8px;">Descrição do Custo</th>
+                <th style="padding: 8px;">Categoria</th>
+                <th style="padding: 8px; text-align: center;">Vencimento</th>
+                <th style="padding: 8px; text-align: right;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (data.fixedDetails.length === 0) {
+      html += `<tr><td colspan="5" style="padding: 10px; text-align: center; color: #94a3b8;">Nenhum custo fixo cadastrado.</td></tr>`;
+    } else {
+      data.fixedDetails.forEach(fc => {
+        html += `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 8px;">
+              <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; ${fc.isConfirmed ? 'background: #dcfce7; color: #166534;' : 'background: #fef3c7; color: #92400e;'}">
+                ${fc.isConfirmed ? 'PAGO / CONFIRMADO' : 'PENDENTE'}
+              </span>
+            </td>
+            <td style="padding: 8px; font-weight: 500;">${fc.name}</td>
+            <td style="padding: 8px; color: #64748b;">${fc.category}</td>
+            <td style="padding: 8px; text-align: center; color: #64748b;">Dia ${fc.dueDay}</td>
+            <td style="padding: 8px; text-align: right; font-weight: bold;">${this.formatCurrency(fc.amount)}</td>
+          </tr>
+        `;
+      });
+    }
+
+    html += `
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Seção de Movimentações Detalhadas -->
+        <div>
+          <h2 style="font-size: 14px; color: #334155; margin: 0 0 10px 0; text-transform: uppercase; font-weight: bold; border-left: 4px solid #15803d; padding-left: 8px;">
+            Demonstrativo de Lançamentos (${data.transactions.length} registros)
+          </h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 1px solid #cbd5e1; text-align: left;">
+                <th style="padding: 6px 8px;">Data</th>
+                <th style="padding: 6px 8px;">Descrição</th>
+                <th style="padding: 6px 8px;">Categoria</th>
+                <th style="padding: 6px 8px;">Forma</th>
+                <th style="padding: 6px 8px; text-align: right;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (data.transactions.length === 0) {
+      html += `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #94a3b8;">Nenhuma movimentação registrada neste período.</td></tr>`;
+    } else {
+      // Ordenar por data crescente
+      const sortedTx = [...data.transactions].sort((a, b) => a.date.localeCompare(b.date));
+      sortedTx.forEach(t => {
+        const isIncome = t.type === 'income';
+        const [y, m, d] = t.date.split('-');
+        html += `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 8px; color: #64748b;">${d}/${m}/${y}</td>
+            <td style="padding: 6px 8px; font-weight: 500;">
+              ${t.description}
+              ${t.isFixedCost ? ' <span style="font-size: 9px; color: #166534; background: #f0fdf4; padding: 1px 4px; border-radius: 3px;">(Fixo)</span>' : ''}
+            </td>
+            <td style="padding: 6px 8px; color: #64748b;">${t.category}</td>
+            <td style="padding: 6px 8px; color: #64748b;">${t.paymentMethod || 'Pix'}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: bold; color: ${isIncome ? '#16a34a' : '#dc2626'};">
+              ${isIncome ? '+' : '-'}${this.formatCurrency(t.amount)}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    html += `
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Rodapé do Relatório -->
+        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center;">
+          Documento gerado eletronicamente para fins de prestação de contas do Núcleo Jardim Florido.
+        </div>
+      </div>
+    `;
+
+    printContainer.innerHTML = html;
+
+    // Verificar se biblioteca html2pdf está disponível
+    if (typeof html2pdf !== 'undefined') {
+      const opt = {
+        margin: 10,
+        filename: `Fluxo_Caixa_NJF_${yearMonth || 'Geral'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      App.showToast('Gerando PDF...', 'info');
+      html2pdf().set(opt).from(printContainer.firstElementChild).save().then(() => {
+        App.showToast('Relatório PDF baixado com sucesso!', 'success');
+      }).catch(err => {
+        console.error('Erro html2pdf:', err);
+        window.print();
+      });
+    } else {
+      window.print();
+    }
+  }
+};
+
+
+/**
+ * Aplicação Central - Núcleo Jardim Florido (Fluxo de Caixa)
+ */
+
+const App = {
+  currentTab: 'dashboard',
+  selectedYearMonth: '', // 'YYYY-MM'
+  editingTransactionId: null,
+  editingFixedCostId: null,
+
+  init() {
+    // Definir mês/ano padrão como o mês atual
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    this.selectedYearMonth = `${y}-${m}`;
+
+    // Inicializar sub-módulos
+    StorageManager.init();
+    CalendarManager.init();
+
+    // Configurar seletor de mês global
+    this.initMonthSelector();
+
+    // Renderizar dados iniciais
+    this.switchTab('dashboard');
+    this.populateCategorySelects();
+    this.setupEventListeners();
+  },
+
+  // Inicializa o dropdown de seleção de meses
+  initMonthSelector() {
+    const monthSelects = document.querySelectorAll('.global-month-selector');
+    const now = new Date();
+    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    monthSelects.forEach(select => {
+      select.innerHTML = '';
+      
+      // Criar opções dos últimos 12 meses e próximos 3 meses
+      for (let i = -6; i <= 6; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const opt = document.createElement('option');
+        opt.value = ym;
+        opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+        if (ym === this.selectedYearMonth) opt.selected = true;
+        select.appendChild(opt);
+      }
+
+      select.addEventListener('change', (e) => {
+        this.setYearMonth(e.target.value);
+      });
+    });
+  },
+
+  setYearMonth(ym) {
+    this.selectedYearMonth = ym;
+    document.querySelectorAll('.global-month-selector').forEach(sel => {
+      sel.value = ym;
+    });
+
+    // Atualizar visualizações
+    this.refreshCurrentTab();
+  },
+
+  // Alternar abas da aplicação
+  switchTab(tabId) {
+    this.currentTab = tabId;
+
+    // Atualizar classes visuais nas abas e botões
+    document.querySelectorAll('.tab-content').forEach(el => {
+      el.classList.add('hidden');
+    });
+
+    const activeTabEl = document.getElementById(`tab-${tabId}`);
+    if (activeTabEl) {
+      activeTabEl.classList.remove('hidden');
+      activeTabEl.classList.add('animate-fade-in');
+    }
+
+    // Atualizar barra de navegação móvel e desktop
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      const isTarget = btn.getAttribute('data-tab') === tabId;
+      if (isTarget) {
+        btn.classList.add('text-emerald-700', 'font-bold');
+        btn.classList.remove('text-slate-500');
+        const iconBg = btn.querySelector('.nav-icon-bg');
+        if (iconBg) iconBg.classList.add('bg-emerald-100', 'text-emerald-800');
+      } else {
+        btn.classList.remove('text-emerald-700', 'font-bold');
+        btn.classList.add('text-slate-500');
+        const iconBg = btn.querySelector('.nav-icon-bg');
+        if (iconBg) iconBg.classList.remove('bg-emerald-100', 'text-emerald-800');
+      }
+    });
+
+    // Atualizar dados da aba
+    this.refreshCurrentTab();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  refreshCurrentTab() {
+    switch (this.currentTab) {
+      case 'dashboard':
+        this.renderDashboard();
+        break;
+      case 'transactions':
+        this.renderTransactions();
+        break;
+      case 'fixed_costs':
+        this.renderFixedCosts();
+        break;
+      case 'calendar':
+        CalendarManager.render();
+        break;
+      case 'reports':
+        this.renderReportsTab();
+        break;
+      case 'categories':
+        this.renderCategoriesTab();
+        break;
+    }
+  },
+
+  // ----------------------------------------------------
+  // DASHBOARD
+  // ----------------------------------------------------
+  renderDashboard() {
+    const transactions = StorageManager.getTransactions();
+    const fixedCosts = StorageManager.getFixedCosts().filter(fc => fc.active);
+    const settings = StorageManager.getSettings();
+
+    // 1. Transações do mês selecionado
+    const monthTx = transactions.filter(t => t.date && t.date.startsWith(this.selectedYearMonth));
+
+    let monthIncome = 0;
+    let monthExpense = 0;
+
+    monthTx.forEach(t => {
+      const amt = parseFloat(t.amount || 0);
+      if (t.type === 'income') monthIncome += amt;
+      else monthExpense += amt;
+    });
+
+    const monthResult = monthIncome - monthExpense;
+
+    // 2. Saldo Acumulado Geral
+    let totalGeneralBalance = parseFloat(settings.initialBalance || 0);
+    transactions.forEach(t => {
+      const amt = parseFloat(t.amount || 0);
+      if (t.type === 'income') totalGeneralBalance += amt;
+      else totalGeneralBalance -= amt;
+    });
+
+    // 3. Custos Fixos Pendentes no Mês
+    let fixedPendingTotal = 0;
+    let fixedPendingCount = 0;
+    fixedCosts.forEach(fc => {
+      const isConfirmed = StorageManager.isFixedCostConfirmed(fc.id, this.selectedYearMonth);
+      if (!isConfirmed && fc.type === 'expense') {
+        fixedPendingTotal += parseFloat(fc.amount || 0);
+        fixedPendingCount++;
+      }
+    });
+
+    // Atualizar elementos no DOM
+    const elGeneralBalance = document.getElementById('dash-general-balance');
+    const elMonthIncome = document.getElementById('dash-month-income');
+    const elMonthExpense = document.getElementById('dash-month-expense');
+    const elMonthResult = document.getElementById('dash-month-result');
+    const elPendingFixed = document.getElementById('dash-pending-fixed');
+
+    if (elGeneralBalance) elGeneralBalance.textContent = ReportsManager.formatCurrency(totalGeneralBalance);
+    if (elMonthIncome) elMonthIncome.textContent = ReportsManager.formatCurrency(monthIncome);
+    if (elMonthExpense) elMonthExpense.textContent = ReportsManager.formatCurrency(monthExpense);
+    if (elMonthResult) {
+      elMonthResult.textContent = `${monthResult >= 0 ? '+' : ''}${ReportsManager.formatCurrency(monthResult)}`;
+      elMonthResult.className = `text-lg md:text-xl font-bold ${monthResult >= 0 ? 'text-emerald-700' : 'text-rose-600'}`;
+    }
+    if (elPendingFixed) {
+      elPendingFixed.textContent = `${ReportsManager.formatCurrency(fixedPendingTotal)} (${fixedPendingCount} pendentes)`;
+    }
+
+    // Atualizar Gráficos
+    ChartsManager.updateAllCharts(this.selectedYearMonth);
+
+    // Renderizar Lançamentos Recentes no Dashboard
+    this.renderRecentTransactionsDashboard(monthTx);
+  },
+
+  renderRecentTransactionsDashboard(monthTx) {
+    const container = document.getElementById('dash-recent-transactions');
+    if (!container) return;
+
+    if (monthTx.length === 0) {
+      container.innerHTML = `
+        <div class="py-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-300"></i>
+          <p class="text-xs md:text-sm">Nenhum lançamento no mês de ${ReportsManager.getMonthName(this.selectedYearMonth)}.</p>
+          <button onclick="App.openTransactionModal()" class="mt-3 text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
+            + Adicionar primeiro lançamento
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    // Pegar os 5 lançamentos mais recentes
+    const recent = [...monthTx].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+
+    let html = `<div class="space-y-2.5">`;
+    recent.forEach(t => {
+      const isIncome = t.type === 'income';
+      const [y, m, d] = t.date.split('-');
+      html += `
+        <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 hover:border-slate-200 shadow-2xs transition-all-custom">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center ${isIncome ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+              <i class="fa-solid ${isIncome ? 'fa-arrow-down' : 'fa-arrow-up'} text-sm"></i>
+            </div>
+            <div>
+              <p class="text-xs md:text-sm font-semibold text-slate-800">${t.description}</p>
+              <p class="text-[11px] text-slate-500">${d}/${m}/${y} • ${t.category}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-xs md:text-sm font-bold ${isIncome ? 'text-emerald-700' : 'text-rose-700'}">
+              ${isIncome ? '+' : '-'} ${ReportsManager.formatCurrency(t.amount)}
+            </span>
+            <span class="block text-[10px] text-slate-400">${t.paymentMethod || 'Pix'}</span>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    container.innerHTML = html;
+  },
+
+  // ----------------------------------------------------
+  // LANÇAMENTOS (ENTRADAS E SAÍDAS)
+  // ----------------------------------------------------
+  renderTransactions() {
+    const listContainer = document.getElementById('transactions-list');
+    if (!listContainer) return;
+
+    const searchTerm = (document.getElementById('tx-search-input')?.value || '').toLowerCase();
+    const typeFilter = document.getElementById('tx-filter-type')?.value || 'all';
+    const categoryFilter = document.getElementById('tx-filter-category')?.value || 'all';
+
+    let transactions = StorageManager.getTransactions();
+
+    // Filtros
+    transactions = transactions.filter(t => {
+      const matchesMonth = !this.selectedYearMonth || (t.date && t.date.startsWith(this.selectedYearMonth));
+      const matchesSearch = !searchTerm || t.description.toLowerCase().includes(searchTerm) || t.category.toLowerCase().includes(searchTerm);
+      const matchesType = typeFilter === 'all' || t.type === typeFilter;
+      const matchesCategory = categoryFilter === 'all' || t.category === categoryFilter;
+      return matchesMonth && matchesSearch && matchesType && matchesCategory;
+    });
+
+    // Ordenar por data decrescente
+    transactions.sort((a, b) => b.date.localeCompare(a.date));
+
+    // Totais do filtro atual
+    let filterIncome = 0;
+    let filterExpense = 0;
+    transactions.forEach(t => {
+      const amt = parseFloat(t.amount || 0);
+      if (t.type === 'income') filterIncome += amt;
+      else filterExpense += amt;
+    });
+
+    const summaryEl = document.getElementById('tx-filtered-summary');
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <span class="text-emerald-700 font-semibold">Entradas: ${ReportsManager.formatCurrency(filterIncome)}</span>
+        <span class="text-slate-300">|</span>
+        <span class="text-rose-600 font-semibold">Saídas: ${ReportsManager.formatCurrency(filterExpense)}</span>
+        <span class="text-slate-300">|</span>
+        <span class="text-slate-700 font-bold">Saldo: ${ReportsManager.formatCurrency(filterIncome - filterExpense)}</span>
+      `;
+    }
+
+    if (transactions.length === 0) {
+      listContainer.innerHTML = `
+        <div class="py-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+          <i class="fa-solid fa-filter-circle-xmark text-4xl mb-3 text-slate-300"></i>
+          <p class="text-sm font-medium">Nenhum lançamento encontrado para os filtros selecionados.</p>
+          <button onclick="App.openTransactionModal()" class="mt-3 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-xs">
+            + Novo Lançamento
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `<div class="space-y-2.5">`;
+    transactions.forEach(t => {
+      const isIncome = t.type === 'income';
+      const [y, m, d] = t.date.split('-');
+      html += `
+        <div class="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-slate-100 hover:border-emerald-200 shadow-2xs transition-all-custom">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center ${isIncome ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+              <i class="fa-solid ${isIncome ? 'fa-arrow-down' : 'fa-arrow-up'} text-sm"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs md:text-sm font-bold text-slate-800">${t.description}</span>
+                ${t.isFixedCost ? '<span class="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-md">Custo Fixo</span>' : ''}
+              </div>
+              <div class="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                <span>${d}/${m}/${y}</span>
+                <span>•</span>
+                <span class="font-medium text-slate-600">${t.category}</span>
+                <span>•</span>
+                <span>${t.paymentMethod || 'Pix'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <span class="text-xs md:text-sm font-bold ${isIncome ? 'text-emerald-700' : 'text-rose-700'} block">
+                ${isIncome ? '+' : '-'} ${ReportsManager.formatCurrency(t.amount)}
+              </span>
+              <span class="text-[10px] text-emerald-600 font-medium">${t.status === 'completed' ? 'Efetivado' : 'Pendente'}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="App.editTransaction('${t.id}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all" title="Editar">
+                <i class="fa-regular fa-pen-to-square text-xs"></i>
+              </button>
+              <button onclick="App.deleteTransactionConfirm('${t.id}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Excluir">
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    listContainer.innerHTML = html;
+  },
+
+  // ----------------------------------------------------
+  // CUSTOS FIXOS & CONFIRMAÇÃO MANUAL
+  // ----------------------------------------------------
+  renderFixedCosts() {
+    const listContainer = document.getElementById('fixed-costs-list');
+    if (!listContainer) return;
+
+    const fixedCosts = StorageManager.getFixedCosts();
+    const currentYM = this.selectedYearMonth;
+
+    let totalFixedMonth = 0;
+    let totalConfirmedMonth = 0;
+    let totalPendingMonth = 0;
+
+    fixedCosts.forEach(fc => {
+      if (fc.active) {
+        const amt = parseFloat(fc.amount || 0);
+        totalFixedMonth += amt;
+        const isConfirmed = StorageManager.isFixedCostConfirmed(fc.id, currentYM);
+        if (isConfirmed) totalConfirmedMonth += amt;
+        else totalPendingMonth += amt;
+      }
+    });
+
+    const summaryContainer = document.getElementById('fixed-costs-summary');
+    if (summaryContainer) {
+      summaryContainer.innerHTML = `
+        <div class="grid grid-cols-3 gap-2">
+          <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center">
+            <span class="text-[11px] text-slate-500 font-medium block">Total Previsto</span>
+            <span class="text-xs md:text-sm font-bold text-slate-800">${ReportsManager.formatCurrency(totalFixedMonth)}</span>
+          </div>
+          <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 text-center">
+            <span class="text-[11px] text-emerald-700 font-medium block">✅ Confirmados/Pagos</span>
+            <span class="text-xs md:text-sm font-bold text-emerald-800">${ReportsManager.formatCurrency(totalConfirmedMonth)}</span>
+          </div>
+          <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-center">
+            <span class="text-[11px] text-amber-700 font-medium block">⏳ Pendentes</span>
+            <span class="text-xs md:text-sm font-bold text-amber-800">${ReportsManager.formatCurrency(totalPendingMonth)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (fixedCosts.length === 0) {
+      listContainer.innerHTML = `
+        <div class="py-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+          <i class="fa-solid fa-list-check text-4xl mb-3 text-slate-300"></i>
+          <p class="text-sm font-medium">Nenhum custo fixo cadastrado ainda.</p>
+          <button onclick="App.openFixedCostModal()" class="mt-3 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-xs">
+            + Cadastrar Custo Fixo
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `<div class="space-y-3">`;
+    fixedCosts.forEach(fc => {
+      const isConfirmed = StorageManager.isFixedCostConfirmed(fc.id, currentYM);
+      const confirmation = StorageManager.getFixedCostConfirmation(fc.id, currentYM);
+
+      html += `
+        <div class="p-4 bg-white rounded-2xl border ${isConfirmed ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-100'} shadow-2xs transition-all-custom">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isConfirmed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                <i class="fa-solid ${isConfirmed ? 'fa-check-double' : 'fa-calendar-check'} text-sm"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 class="text-sm md:text-base font-bold text-slate-800">${fc.name}</h4>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isConfirmed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                    ${isConfirmed ? 'PAGO / CONFIRMADO' : 'PENDENTE'}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">
+                  <i class="fa-regular fa-clock text-[10px] mr-1"></i> Vencimento: todo dia <strong>${fc.dueDay}</strong> • Categoria: ${fc.category}
+                </p>
+                ${fc.notes ? `<p class="text-[11px] text-slate-400 mt-1 italic">${fc.notes}</p>` : ''}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+              <div class="text-left sm:text-right">
+                <span class="text-xs text-slate-400 block">Valor Fixo</span>
+                <span class="text-sm md:text-base font-extrabold text-slate-800">${ReportsManager.formatCurrency(fc.amount)}</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                ${isConfirmed ? `
+                  <button onclick="App.unconfirmFixedCost('${fc.id}', '${currentYM}')" 
+                          class="px-3 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 text-xs font-semibold rounded-xl transition-all-custom" title="Desfazer confirmação">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Desfazer
+                  </button>
+                ` : `
+                  <button onclick="App.openConfirmFixedCostModal('${fc.id}', '${currentYM}')" 
+                          class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-xl shadow-xs transition-all-custom">
+                    <i class="fa-solid fa-check mr-1"></i> Confirmar Pagamento
+                  </button>
+                `}
+                
+                <div class="relative inline-block text-left">
+                  <button onclick="event.stopPropagation(); App.toggleFixedCostMenu('${fc.id}')" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg" title="Mais opções do custo fixo" aria-label="Mais opções do custo fixo" aria-expanded="false">
+                    <i class="fa-solid fa-ellipsis-vertical text-sm"></i>
+                  </button>
+                  <div id="fixed-cost-menu-${fc.id}" class="hidden absolute right-0 bottom-full mb-1 z-10 w-36 overflow-hidden bg-white rounded-xl border border-slate-200 shadow-lg">
+                    <button onclick="App.openEditFixedCostModal('${fc.id}')" class="flex items-center gap-2 w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50">
+                      <i class="fa-regular fa-pen-to-square text-slate-400"></i> Editar
+                    </button>
+                    <button onclick="App.deleteFixedCostConfirm('${fc.id}')" class="flex items-center gap-2 w-full px-3 py-2 text-left text-xs font-medium text-rose-700 hover:bg-rose-50">
+                      <i class="fa-regular fa-trash-can"></i> Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    listContainer.innerHTML = html;
+  },
+
+  // ----------------------------------------------------
+  // RELATÓRIOS & COMPARTILHAMENTO
+  // ----------------------------------------------------
+  renderReportsTab() {
+    const data = ReportsManager.getPeriodData(this.selectedYearMonth);
+    const container = document.getElementById('reports-preview-container');
+    if (!container) return;
+
+    let html = `
+      <div class="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Pré-visualização do Relatório</span>
+            <h3 class="text-lg font-bold text-slate-800">${ReportsManager.getMonthName(this.selectedYearMonth)}</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="ReportsManager.shareViaWhatsApp('${this.selectedYearMonth}')" 
+                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+              <i class="fa-brands fa-whatsapp text-base"></i>
+              <span>Enviar WhatsApp</span>
+            </button>
+            <button onclick="ReportsManager.copyWhatsAppText('${this.selectedYearMonth}')" 
+                    class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs md:text-sm font-medium rounded-xl transition-all-custom" title="Copiar Texto">
+              <i class="fa-regular fa-copy"></i>
+              <span>Copiar</span>
+            </button>
+            <button onclick="ReportsManager.exportPDFReport('${this.selectedYearMonth}')" 
+                    class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+              <i class="fa-solid fa-file-pdf"></i>
+              <span>Exportar PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Resumo Consolidado -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-100">
+            <span class="text-[11px] font-semibold text-emerald-700 block">Total de Entradas</span>
+            <span class="text-base font-bold text-emerald-800">${ReportsManager.formatCurrency(data.totalIncome)}</span>
+          </div>
+          <div class="bg-rose-50/70 p-3.5 rounded-xl border border-rose-100">
+            <span class="text-[11px] font-semibold text-rose-700 block">Total de Saídas</span>
+            <span class="text-base font-bold text-rose-800">${ReportsManager.formatCurrency(data.totalExpense)}</span>
+          </div>
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <span class="text-[11px] font-semibold text-slate-600 block">Resultado do Mês</span>
+            <span class="text-base font-bold ${data.netPeriod >= 0 ? 'text-emerald-700' : 'text-rose-600'}">
+              ${data.netPeriod >= 0 ? '+' : ''}${ReportsManager.formatCurrency(data.netPeriod)}
+            </span>
+          </div>
+          <div class="bg-emerald-900 text-white p-3.5 rounded-xl shadow-xs">
+            <span class="text-[11px] font-medium text-emerald-200 block">Saldo Geral em Caixa</span>
+            <span class="text-base font-bold text-white">${ReportsManager.formatCurrency(data.cumulativeBalance)}</span>
+          </div>
+        </div>
+
+        <!-- Box com texto formatado para envio direto -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mensagem Formatada (WhatsApp):</label>
+          <pre class="bg-slate-50 p-4 rounded-xl text-xs text-slate-700 font-mono whitespace-pre-wrap border border-slate-200 select-all">${ReportsManager.generateWhatsAppText(this.selectedYearMonth)}</pre>
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  },
+
+  // ----------------------------------------------------
+  // CATEGORIAS & CONFIGURAÇÕES
+  // ----------------------------------------------------
+  renderCategoriesTab() {
+    const listContainer = document.getElementById('categories-list');
+    if (!listContainer) return;
+
+    const categories = StorageManager.getCategories();
+    let html = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">`;
+
+    categories.forEach(cat => {
+      const isIncome = cat.type === 'income';
+      html += `
+        <div class="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-slate-100 shadow-2xs">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: ${cat.color}20; color: ${cat.color};">
+              <i class="fa-solid ${cat.icon || 'fa-tag'} text-xs"></i>
+            </div>
+            <div>
+              <p class="text-xs md:text-sm font-semibold text-slate-800">${cat.name}</p>
+              <span class="text-[10px] font-medium ${isIncome ? 'text-emerald-700' : 'text-rose-600'}">
+                ${isIncome ? 'Entrada' : 'Saída'}
+              </span>
+            </div>
+          </div>
+          <button onclick="App.deleteCategoryConfirm('${cat.id}')" class="text-slate-300 hover:text-rose-600 p-1.5 transition-colors">
+            <i class="fa-regular fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    listContainer.innerHTML = html;
+  },
+
+  // ----------------------------------------------------
+  // MODAIS E FORMULÁRIOS
+  // ----------------------------------------------------
+  populateCategorySelects(selectedCategory = '') {
+    const selects = [
+      document.getElementById('tx-category'),
+      document.getElementById('tx-filter-category'),
+      document.getElementById('fc-category')
+    ];
+
+    const categories = StorageManager.getCategories();
+
+    selects.forEach(select => {
+      if (!select) return;
+      const isFilter = select.id === 'tx-filter-category';
+      select.innerHTML = isFilter ? '<option value="all">Todas as Categorias</option>' : '';
+
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.name;
+        opt.textContent = `${cat.type === 'income' ? '🟢' : '🔴'} ${cat.name}`;
+        if (cat.name === selectedCategory) opt.selected = true;
+        select.appendChild(opt);
+      });
+    });
+  },
+
+  openTransactionModal(type = 'income') {
+    this.editingTransactionId = null;
+    const modal = document.getElementById('modal-transaction');
+    const form = document.getElementById('form-transaction');
+    if (!modal || !form) return;
+
+    form.reset();
+    document.getElementById('tx-modal-title').textContent = 'Novo Lançamento';
+    document.getElementById('tx-type').value = type;
+    this.updateTransactionTypeButtons(type);
+
+    // Data padrão: hoje
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    document.getElementById('tx-date').value = today;
+
+    this.populateCategorySelects();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  openTransactionModalWithDate(dateStr) {
+    this.openTransactionModal('income');
+    document.getElementById('tx-date').value = dateStr;
+  },
+
+  editTransaction(id) {
+    const tx = StorageManager.getTransactions().find(t => t.id === id);
+    if (!tx) return;
+
+    this.editingTransactionId = id;
+    const modal = document.getElementById('modal-transaction');
+    if (!modal) return;
+
+    document.getElementById('tx-modal-title').textContent = 'Editar Lançamento';
+    document.getElementById('tx-type').value = tx.type;
+    this.updateTransactionTypeButtons(tx.type);
+
+    document.getElementById('tx-description').value = tx.description;
+    document.getElementById('tx-amount').value = tx.amount;
+    document.getElementById('tx-date').value = tx.date;
+    document.getElementById('tx-payment-method').value = tx.paymentMethod || 'Pix';
+    document.getElementById('tx-notes').value = tx.notes || '';
+
+    this.populateCategorySelects(tx.category);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  saveTransactionFromForm(e) {
+    e.preventDefault();
+    const description = document.getElementById('tx-description').value.trim();
+    const amount = parseFloat(document.getElementById('tx-amount').value);
+    const type = document.getElementById('tx-type').value;
+    const date = document.getElementById('tx-date').value;
+    const category = document.getElementById('tx-category').value;
+    const paymentMethod = document.getElementById('tx-payment-method').value;
+    const notes = document.getElementById('tx-notes').value.trim();
+
+    if (!description || isNaN(amount) || amount <= 0 || !date || !category) {
+      this.showToast('Preencha todos os campos obrigatórios.', 'warning');
+      return;
+    }
+
+    if (this.editingTransactionId) {
+      StorageManager.updateTransaction(this.editingTransactionId, {
+        description, amount, type, date, category, paymentMethod, notes
+      });
+      this.showToast('Lançamento atualizado com sucesso!', 'success');
+    } else {
+      StorageManager.addTransaction({
+        description, amount, type, date, category, paymentMethod, notes, status: 'completed'
+      });
+      this.showToast('Lançamento registrado com sucesso!', 'success');
+    }
+
+    this.closeModal('modal-transaction');
+    this.refreshCurrentTab();
+  },
+
+  deleteTransactionConfirm(id) {
+    if (confirm('Deseja realmente excluir este lançamento do fluxo de caixa?')) {
+      StorageManager.deleteTransaction(id);
+      this.showToast('Lançamento excluído.', 'info');
+      this.refreshCurrentTab();
+    }
+  },
+
+  updateTransactionTypeButtons(type) {
+    const btnIncome = document.getElementById('btn-type-income');
+    const btnExpense = document.getElementById('btn-type-expense');
+    document.getElementById('tx-type').value = type;
+
+    if (type === 'income') {
+      btnIncome.className = 'flex-1 py-2 rounded-xl text-xs md:text-sm font-bold bg-emerald-700 text-white shadow-xs';
+      btnExpense.className = 'flex-1 py-2 rounded-xl text-xs md:text-sm font-semibold bg-slate-100 text-slate-600';
+    } else {
+      btnExpense.className = 'flex-1 py-2 rounded-xl text-xs md:text-sm font-bold bg-rose-600 text-white shadow-xs';
+      btnIncome.className = 'flex-1 py-2 rounded-xl text-xs md:text-sm font-semibold bg-slate-100 text-slate-600';
+    }
+  },
+
+  // Modal de Custos Fixos
+  openFixedCostModal() {
+    this.editingFixedCostId = null;
+    const modal = document.getElementById('modal-fixed-cost');
+    const form = document.getElementById('form-fixed-cost');
+    if (!modal || !form) return;
+
+    form.reset();
+    document.getElementById('fc-modal-title').textContent = 'Novo Custo Fixo';
+    this.populateCategorySelects();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  openEditFixedCostModal(id) {
+    const fc = StorageManager.getFixedCosts().find(f => f.id === id);
+    if (!fc) return;
+
+    this.editingFixedCostId = id;
+    const modal = document.getElementById('modal-fixed-cost');
+    if (!modal) return;
+
+    document.getElementById('fc-modal-title').textContent = 'Editar Custo Fixo';
+    document.getElementById('fc-name').value = fc.name;
+    document.getElementById('fc-amount').value = fc.amount;
+    document.getElementById('fc-due-day').value = fc.dueDay;
+    document.getElementById('fc-notes').value = fc.notes || '';
+    this.populateCategorySelects(fc.category);
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  toggleFixedCostMenu(id) {
+    document.querySelectorAll('[id^="fixed-cost-menu-"]').forEach(menu => {
+      if (menu.id !== `fixed-cost-menu-${id}`) menu.classList.add('hidden');
+    });
+    document.getElementById(`fixed-cost-menu-${id}`)?.classList.toggle('hidden');
+  },
+
+  deleteFixedCostConfirm(id) {
+    const fixedCost = StorageManager.getFixedCosts().find(fc => fc.id === id);
+    if (!fixedCost) return;
+
+    if (confirm(`Deseja excluir o custo fixo "${fixedCost.name}"? Pagamentos já confirmados dele também serão removidos do fluxo de caixa.`)) {
+      StorageManager.deleteFixedCost(id);
+      this.showToast('Custo fixo excluído.', 'info');
+      this.refreshCurrentTab();
+    }
+  },
+
+  saveFixedCostFromForm(e) {
+    e.preventDefault();
+    const name = document.getElementById('fc-name').value.trim();
+    const amount = parseFloat(document.getElementById('fc-amount').value);
+    const dueDay = parseInt(document.getElementById('fc-due-day').value);
+    const category = document.getElementById('fc-category').value;
+    const notes = document.getElementById('fc-notes').value.trim();
+
+    if (!name || isNaN(amount) || amount <= 0 || isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
+      this.showToast('Preencha os dados do custo fixo corretamente.', 'warning');
+      return;
+    }
+
+    if (this.editingFixedCostId) {
+      StorageManager.updateFixedCost(this.editingFixedCostId, { name, amount, dueDay, category, notes });
+      this.showToast('Custo fixo atualizado!', 'success');
+    } else {
+      StorageManager.addFixedCost({ name, amount, dueDay, category, notes, type: 'expense' });
+      this.showToast('Custo fixo cadastrado com sucesso!', 'success');
+    }
+
+    this.closeModal('modal-fixed-cost');
+    this.refreshCurrentTab();
+  },
+
+  // Confirmação Manual de Custo Fixo
+  openConfirmFixedCostModal(fixedCostId, yearMonth, defaultDate = '') {
+    const fc = StorageManager.getFixedCosts().find(f => f.id === fixedCostId);
+    if (!fc) return;
+
+    const modal = document.getElementById('modal-confirm-fixed-cost');
+    if (!modal) return;
+
+    document.getElementById('conf-fc-id').value = fixedCostId;
+    document.getElementById('conf-fc-yearmonth').value = yearMonth;
+    document.getElementById('conf-fc-name-display').textContent = fc.name;
+    document.getElementById('conf-fc-amount').value = fc.amount;
+
+    // Calcular data sugerida para pagamento
+    let payDate = defaultDate;
+    if (!payDate) {
+      const [y, m] = yearMonth.split('-');
+      const day = String(fc.dueDay).padStart(2, '0');
+      payDate = `${y}-${m}-${day}`;
+    }
+    document.getElementById('conf-fc-date').value = payDate;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  executeConfirmFixedCost(e) {
+    e.preventDefault();
+    const fixedCostId = document.getElementById('conf-fc-id').value;
+    const yearMonth = document.getElementById('conf-fc-yearmonth').value;
+    const paymentDate = document.getElementById('conf-fc-date').value;
+    const actualAmount = parseFloat(document.getElementById('conf-fc-amount').value);
+    const paymentMethod = document.getElementById('conf-fc-method').value;
+    const notes = document.getElementById('conf-fc-notes').value.trim();
+
+    if (!paymentDate || isNaN(actualAmount) || actualAmount <= 0) {
+      this.showToast('Informe a data e o valor correto.', 'warning');
+      return;
+    }
+
+    StorageManager.confirmFixedCost(fixedCostId, yearMonth, paymentDate, actualAmount, paymentMethod, notes);
+    this.showToast('Custo fixo confirmado e lançado no fluxo de caixa!', 'success');
+    this.closeModal('modal-confirm-fixed-cost');
+    this.refreshCurrentTab();
+  },
+
+  unconfirmFixedCost(fixedCostId, yearMonth) {
+    if (confirm('Deseja desfazer a confirmação deste custo fixo? A movimentação gerada será removida.')) {
+      StorageManager.unconfirmFixedCost(fixedCostId, yearMonth);
+      this.showToast('Confirmação desfeita.', 'info');
+      this.refreshCurrentTab();
+    }
+  },
+
+  // Modal de Categorias
+  openCategoryModal() {
+    const modal = document.getElementById('modal-category');
+    const form = document.getElementById('form-category');
+    if (!modal || !form) return;
+    form.reset();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  saveCategoryFromForm(e) {
+    e.preventDefault();
+    const name = document.getElementById('cat-name').value.trim();
+    const type = document.getElementById('cat-type').value;
+    const color = document.getElementById('cat-color').value;
+
+    if (!name) {
+      this.showToast('Informe o nome da categoria.', 'warning');
+      return;
+    }
+
+    StorageManager.addCategory({ name, type, color, icon: 'fa-tag' });
+    this.showToast('Categoria criada com sucesso!', 'success');
+    this.closeModal('modal-category');
+    this.populateCategorySelects();
+    this.refreshCurrentTab();
+  },
+
+  deleteCategoryConfirm(id) {
+    if (confirm('Deseja excluir esta categoria?')) {
+      StorageManager.deleteCategory(id);
+      this.showToast('Categoria removida.', 'info');
+      this.populateCategorySelects();
+      this.refreshCurrentTab();
+    }
+  },
+
+  closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  // Exportar / Importar Backup JSON
+  exportBackupFile() {
+    const json = StorageManager.exportAllData();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_fluxo_caixa_njf_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('Backup exportado com sucesso!', 'success');
+  },
+
+  importBackupFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const success = StorageManager.importAllData(event.target.result);
+      if (success) {
+        this.showToast('Dados restaurados com sucesso!', 'success');
+        this.populateCategorySelects();
+        this.refreshCurrentTab();
+      } else {
+        this.showToast('Erro ao importar arquivo de backup.', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Limpar input
+  },
+
+  // Notificações Toast
+  showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const colors = {
+      success: 'bg-emerald-800 text-white',
+      error: 'bg-rose-700 text-white',
+      warning: 'bg-amber-700 text-white',
+      info: 'bg-slate-800 text-white'
+    };
+
+    const icons = {
+      success: 'fa-circle-check',
+      error: 'fa-triangle-exclamation',
+      warning: 'fa-circle-exclamation',
+      info: 'fa-circle-info'
+    };
+
+    const toast = document.createElement('div');
+    toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg text-xs md:text-sm font-medium animate-fade-in ${colors[type] || colors.info}`;
+    toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i> <span>${message}</span>`;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  },
+
+  setupEventListeners() {
+    // Busca e filtros na aba de transações
+    document.getElementById('tx-search-input')?.addEventListener('input', () => this.renderTransactions());
+    document.getElementById('tx-filter-type')?.addEventListener('change', () => this.renderTransactions());
+    document.getElementById('tx-filter-category')?.addEventListener('change', () => this.renderTransactions());
+
+    // Fechar modais ao clicar no backdrop
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          backdrop.classList.add('hidden');
+          backdrop.classList.remove('flex');
+        }
+      });
+    });
+  }
+};
+
+// Inicializar aplicação ao carregar o DOM
+document.addEventListener('DOMContentLoaded', () => {
+  App.init();
+});
+
+  </script>
+
+  <!-- Registro de Service Worker para PWA / Offline -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.log('SW registration error:', err);
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>

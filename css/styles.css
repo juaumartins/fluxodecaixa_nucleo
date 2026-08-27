@@ -1,0 +1,128 @@
+/* Estilos Customizados - Núcleo Jardim Florido */
+:root {
+  --primary-50: #f0fdf4;
+  --primary-100: #dcfce7;
+  --primary-200: #bbf7d0;
+  --primary-500: #22c55e;
+  --primary-600: #16a34a;
+  --primary-700: #15803d;
+  --primary-800: #166534;
+  --primary-900: #14532d;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.auth-locked > *:not(.login-screen) { display: none !important; }
+.login-screen { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1.5rem; background: linear-gradient(135deg, #f0fdf4, #ecfeff); }
+.login-card { width: min(100%, 390px); padding: 2rem; background: white; border: 1px solid #d1fae5; border-radius: 1.25rem; box-shadow: 0 20px 50px rgba(20, 83, 45, .14); }
+.login-mark { width: 3rem; height: 3rem; display: grid; place-items: center; margin-bottom: 1rem; border-radius: 1rem; background: #166534; color: #a7f3d0; font-size: 1.25rem; }
+.login-kicker { margin: 0; color: #15803d; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.login-card h1 { margin: .35rem 0 1.5rem; color: #0f172a; font-size: 1.5rem; }
+.login-card label { display: block; margin-top: 1rem; color: #334155; font-size: .8rem; font-weight: 600; }
+.login-card input { display: block; width: 100%; margin-top: .4rem; padding: .7rem .8rem; border: 1px solid #cbd5e1; border-radius: .65rem; font-size: 1rem; }
+.login-card button { width: 100%; margin-top: 1.25rem; padding: .75rem; border: 0; border-radius: .65rem; background: #166534; color: white; font-weight: 700; cursor: pointer; }
+.login-error { min-height: 1.25rem; margin: .75rem 0 0; color: #b91c1c; font-size: .8rem; }
+.account-button { width: 2rem; height: 2rem; border: 0; border-radius: .5rem; color: #64748b; background: transparent; cursor: pointer; }
+.account-button:hover { color: #166534; background: #f0fdf4; }
+
+/* Transições suaves */
+.transition-all-custom {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Badge de status */
+.badge-income {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.badge-expense {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.badge-fixed {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+.badge-pending {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Calendário */
+.calendar-day-cell {
+  min-height: 48px;
+  transition: all 0.15s ease-in-out;
+}
+.calendar-day-cell:hover {
+  background-color: #f0fdf4;
+}
+.calendar-day-selected {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+.calendar-day-selected .day-number {
+  font-weight: 700;
+  color: #ffffff;
+}
+.calendar-day-today {
+  border: 2px solid #22c55e;
+}
+
+/* Botões com efeito de clique */
+button:active, .btn-touch:active {
+  transform: scale(0.97);
+}
+
+/* Estilos de Impressão / PDF */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+  }
+  .no-print, nav, #bottom-nav, #fab-button, .modal-backdrop, #toast-container, header {
+    display: none !important;
+  }
+  #report-print-container {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+  }
+  .page-break {
+    page-break-after: always;
+  }
+}

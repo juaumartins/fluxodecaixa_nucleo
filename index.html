@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Núcleo Jardim Florido - Fluxo de Caixa</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- html2pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#15803d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="NJF Caixa">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-12 antialiased">
+
+  <!-- Top Header / App Bar -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      
+      <!-- Brand & Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="App.switchTab('dashboard')">
+        <div class="w-10 h-10 rounded-2xl bg-brand-800 text-white flex items-center justify-center shadow-sm shadow-brand-800/20">
+          <i class="fa-solid fa-seedling text-lg text-emerald-300"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">Núcleo Jardim Florido</h1>
+          <p class="text-[11px] font-medium text-brand-700">Fluxo de Caixa & Gestão</p>
+        </div>
+      </div>
+
+      <!-- Seletor de Mês & Ação Rápida -->
+      <div class="flex items-center gap-2">
+        <div id="auth-controls" class="hidden items-center gap-1"></div>
+        <div class="relative">
+          <select class="global-month-selector bg-brand-50 border border-brand-200 text-brand-900 text-xs sm:text-sm font-semibold rounded-xl px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none cursor-pointer">
+            <!-- Populado via JS -->
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-brand-700">
+            <i class="fa-solid fa-chevron-down text-xs"></i>
+          </div>
+        </div>
+
+        <button onclick="App.openTransactionModal()" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+          <i class="fa-solid fa-plus"></i>
+          <span>Lançamento</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Container Principal -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-5">
+
+    <!-- ============================================================ -->
+    <!-- ABA 1: DASHBOARD / RESUMO -->
+    <!-- ============================================================ -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      
+      <!-- Cards de Resumo Principal -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        
+        <!-- Saldo Geral -->
+        <div class="col-span-2 sm:col-span-1 bg-gradient-to-br from-brand-800 to-brand-900 text-white p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden">
+          <div class="relative z-10">
+            <span class="text-[11px] font-semibold text-emerald-200 tracking-wider uppercase block">Saldo Geral em Caixa</span>
+            <h3 id="dash-general-balance" class="text-xl sm:text-2xl font-black mt-1">R$ 0,00</h3>
+            <p class="text-[11px] text-emerald-100/80 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-vault text-[10px]"></i> Acumulado total
+            </p>
+          </div>
+          <i class="fa-solid fa-coins absolute -bottom-3 -right-3 text-6xl text-white/10 pointer-events-none"></i>
+        </div>
+
+        <!-- Entradas do Mês -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Entradas do Mês</span>
+            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-arrow-down"></i>
+            </span>
+          </div>
+          <h3 id="dash-month-income" class="text-lg sm:text-xl font-bold text-emerald-700 mt-1">R$ 0,00</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Receitas confirmadas</p>
+        </div>
+
+        <!-- Saídas do Mês -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Saídas do Mês</span>
+            <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-arrow-up"></i>
+            </span>
+          </div>
+          <h3 id="dash-month-expense" class="text-lg sm:text-xl font-bold text-rose-600 mt-1">R$ 0,00</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Despesas pagas</p>
+        </div>
+
+        <!-- Resultado do Mês -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Resultado Operacional</span>
+            <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-scale-balanced"></i>
+            </span>
+          </div>
+          <h3 id="dash-month-result" class="text-lg sm:text-xl font-bold text-slate-800 mt-1">R$ 0,00</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Entradas - Saídas</p>
+        </div>
+
+      </div>
+
+      <!-- Alerta de Custos Fixos Pendentes & Atalhos Rápidos -->
+      <div class="bg-brand-50/80 border border-brand-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <i class="fa-solid fa-bell"></i>
+          </div>
+          <div>
+            <h4 class="text-xs sm:text-sm font-bold text-slate-900">Atenção aos Custos Fixos do Mês</h4>
+            <p id="dash-pending-fixed" class="text-xs text-brand-900 font-medium">Carregando pendências...</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button onclick="App.switchTab('fixed_costs')" class="w-full sm:w-auto px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white text-xs font-semibold rounded-xl shadow-xs transition-all-custom text-center">
+            Ver e Confirmar Contas
+          </button>
+        </div>
+      </div>
+
+      <!-- Seção de Gráficos -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Gráfico Comparativo 6 Meses -->
+        <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-slate-800">Evolução do Fluxo de Caixa</h3>
+              <p class="text-xs text-slate-500">Comparativo dos últimos 6 meses</p>
+            </div>
+            <span class="text-xs font-medium text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg">Entradas vs Saídas</span>
+          </div>
+          <div class="h-64 relative">
+            <canvas id="chart-cashflow-evolution"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico de Despesas por Categoria -->
+        <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+          <div class="mb-4">
+            <h3 class="text-sm sm:text-base font-bold text-slate-800">Despesas por Categoria</h3>
+            <p class="text-xs text-slate-500">Distribuição no mês selecionado</p>
+          </div>
+          <div class="h-64 relative">
+            <canvas id="chart-expenses-category"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimos Lançamentos do Mês -->
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-800">Lançamentos Recentes do Mês</h3>
+            <p class="text-xs text-slate-500">Últimas movimentações registradas</p>
+          </div>
+          <button onclick="App.switchTab('transactions')" class="text-xs font-bold text-brand-700 hover:text-brand-800 flex items-center gap-1">
+            <span>Ver todos</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </button>
+        </div>
+        <div id="dash-recent-transactions">
+          <!-- Populado via JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 2: LANÇAMENTOS (ENTRADAS & SAÍDAS) -->
+    <!-- ============================================================ -->
+    <section id="tab-transactions" class="tab-content hidden space-y-5">
+      
+      <!-- Cabeçalho da Aba -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Histórico de Lançamentos</h2>
+          <p class="text-xs text-slate-500">Gerencie todas as entradas e saídas do fluxo de caixa</p>
+        </div>
+        <button onclick="App.openTransactionModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+          <i class="fa-solid fa-plus"></i>
+          <span>Novo Lançamento</span>
+        </button>
+      </div>
+
+      <!-- Barra de Filtros e Busca -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/70 shadow-2xs space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <!-- Busca -->
+          <div class="relative">
+            <input type="text" id="tx-search-input" placeholder="Buscar descrição ou categoria..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 text-xs sm:text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+          </div>
+
+          <!-- Filtro de Tipo -->
+          <select id="tx-filter-type" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 text-xs sm:text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="all">Todos os Tipos (Entradas & Saídas)</option>
+            <option value="income">Apenas Entradas (+)</option>
+            <option value="expense">Apenas Saídas (-)</option>
+          </select>
+
+          <!-- Filtro de Categoria -->
+          <select id="tx-filter-category" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 text-xs sm:text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="all">Todas as Categorias</option>
+          </select>
+        </div>
+
+        <!-- Resumo dos registros filtrados -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+          <span>Resumo do filtro:</span>
+          <div id="tx-filtered-summary" class="flex items-center gap-2 font-medium">
+            <!-- Populado via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Transações -->
+      <div id="transactions-list">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 3: CUSTOS FIXOS & CONFIRMAÇÃO MANUAL -->
+    <!-- ============================================================ -->
+    <section id="tab-fixed_costs" class="tab-content hidden space-y-5">
+      
+      <!-- Cabeçalho -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Custos Fixos & Recorrentes</h2>
+          <p class="text-xs text-slate-500">Acompanhe e confirme manualmente os pagamentos das despesas fixas</p>
+        </div>
+        <button onclick="App.openFixedCostModal()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all-custom">
+          <i class="fa-solid fa-plus"></i>
+          <span>Novo Custo Fixo</span>
+        </button>
+      </div>
+
+      <!-- Resumo de Custos Fixos do Mês -->
+      <div id="fixed-costs-summary">
+        <!-- Populado via JS -->
+      </div>
+
+      <!-- Lista de Custos Fixos -->
+      <div id="fixed-costs-list">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 4: CALENDÁRIO INTERATIVO -->
+    <!-- ============================================================ -->
+    <section id="tab-calendar" class="tab-content hidden space-y-5">
+      
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs">
+        
+        <!-- Controles do Calendário -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <button onclick="CalendarManager.prevMonth()" class="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all" title="Mês Anterior">
+              <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+            <h3 id="calendar-month-year-title" class="text-base sm:text-lg font-bold text-slate-900 min-w-[150px] text-center">
+              Agosto de 2026
+            </h3>
+            <button onclick="CalendarManager.nextMonth()" class="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all" title="Próximo Mês">
+              <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="CalendarManager.goToToday()" class="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-800 text-xs font-bold rounded-xl border border-brand-200 transition-all">
+              Hoje
+            </button>
+          </div>
+        </div>
+
+        <!-- Legenda de Cores -->
+        <div class="flex flex-wrap items-center gap-4 my-3 text-[11px] text-slate-500">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span>Entrada</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            <span>Saída</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span>Custo Fixo a Vencer</span>
+          </div>
+        </div>
+
+        <!-- Cabeçalho dos Dias da Semana -->
+        <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 uppercase py-2">
+          <span>Dom</span>
+          <span>Seg</span>
+          <span>Ter</span>
+          <span>Qua</span>
+          <span>Qui</span>
+          <span>Sex</span>
+          <span>Sáb</span>
+        </div>
+
+        <!-- Grid de Dias do Mês -->
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1 md:gap-2">
+          <!-- Populado via JS -->
+        </div>
+
+      </div>
+
+      <!-- Detalhes do Dia Selecionado -->
+      <div id="calendar-day-details">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 5: RELATÓRIOS & COMPARTILHAMENTO -->
+    <!-- ============================================================ -->
+    <section id="tab-reports" class="tab-content hidden space-y-5">
+      
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/70 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-slate-800">Prestação de Contas & Relatórios</h2>
+          <p class="text-xs text-slate-500">Compartilhe no WhatsApp ou gere documentos em PDF com facilidade</p>
+        </div>
+      </div>
+
+      <div id="reports-preview-container">
+        <!-- Populado via JS -->
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ABA 6: CATEGORIAS & CONFIGURAÇÕES -->
+    <!-- ============================================================ -->
+    <section id="tab-categories" class="tab-content hidden space-y-6">
+      
+      <!-- Categorias -->
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-800">Categorias Personalizadas</h3>
+            <p class="text-xs text-slate-500">Organize os tipos de receitas e despesas</p>
+          </div>
+          <button onclick="App.openCategoryModal()" class="px-3 py-1.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-semibold rounded-xl shadow-xs transition-all-custom">
+            + Nova Categoria
+          </button>
+        </div>
+        <div id="categories-list">
+          <!-- Populado via JS -->
+        </div>
+      </div>
+
+      <!-- Backup e Restauração -->
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/70 shadow-2xs space-y-4">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-800">Segurança & Backup dos Dados</h3>
+          <p class="text-xs text-slate-500">Como a aplicação roda no seu navegador, você pode salvar cópias de segurança a qualquer momento</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <button onclick="App.exportBackupFile()" class="flex items-center justify-center gap-2 p-3 bg-brand-50 hover:bg-brand-100 text-brand-900 border border-brand-200 rounded-xl text-xs font-bold transition-all">
+            <i class="fa-solid fa-download"></i>
+            <span>Exportar Cópia de Backup (.JSON)</span>
+          </button>
+
+          <label class="flex items-center justify-center gap-2 p-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold cursor-pointer transition-all">
+            <i class="fa-solid fa-upload"></i>
+            <span>Restaurar Backup</span>
+            <input type="file" accept=".json" onchange="App.importBackupFile(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- BARRA DE NAVEGAÇÃO INFERIOR (MOBILE & DESKTOP DOCK) -->
+  <!-- ============================================================ -->
+  <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200/80 px-2 py-1.5 z-40 shadow-lg">
+    <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
+      
+      <button data-tab="dashboard" onclick="App.switchTab('dashboard')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-chart-pie text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Resumo</span>
+      </button>
+
+      <button data-tab="transactions" onclick="App.switchTab('transactions')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-list-ul text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Lançamentos</span>
+      </button>
+
+      <button data-tab="fixed_costs" onclick="App.switchTab('fixed_costs')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-clipboard-check text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Custos Fixos</span>
+      </button>
+
+      <button data-tab="calendar" onclick="App.switchTab('calendar')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-calendar-days text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Calendário</span>
+      </button>
+
+      <button data-tab="reports" onclick="App.switchTab('reports')" class="nav-item flex flex-col items-center justify-center py-1 text-slate-500 hover:text-brand-700 transition-colors">
+        <div class="nav-icon-bg w-8 h-8 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
+        </div>
+        <span class="text-[10px] mt-0.5">Relatórios</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- Botão Flutuante (FAB) para Mobile -->
+  <button id="fab-button" onclick="App.openTransactionModal()" class="sm:hidden fixed bottom-20 right-4 w-12 h-12 rounded-full bg-brand-800 hover:bg-brand-900 text-white flex items-center justify-center shadow-lg z-30 transition-transform active:scale-95" title="Novo Lançamento">
+    <i class="fa-solid fa-plus text-lg"></i>
+  </button>
+
+  <!-- ============================================================ -->
+  <!-- MODAIS -->
+  <!-- ============================================================ -->
+
+  <!-- Modal 1: Novo / Editar Lançamento -->
+  <div id="modal-transaction" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="tx-modal-title" class="text-base sm:text-lg font-bold text-slate-900">Novo Lançamento</h3>
+        <button onclick="App.closeModal('modal-transaction')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-transaction" onsubmit="App.saveTransactionFromForm(event)" class="space-y-4">
+        <input type="hidden" id="tx-type" value="income">
+
+        <!-- Seletor Entrada / Saída -->
+        <div class="flex items-center p-1 bg-slate-100 rounded-2xl gap-1">
+          <button type="button" id="btn-type-income" onclick="App.updateTransactionTypeButtons('income')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold bg-brand-800 text-white shadow-xs">
+            <i class="fa-solid fa-arrow-down mr-1"></i> Entrada (+)
+          </button>
+          <button type="button" id="btn-type-expense" onclick="App.updateTransactionTypeButtons('expense')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 text-slate-600">
+            <i class="fa-solid fa-arrow-up mr-1"></i> Saída (-)
+          </button>
+        </div>
+
+        <!-- Descrição -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Descrição *</label>
+          <input type="text" id="tx-description" required placeholder="Ex: Venda de Mudas, Adubo, Doação..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Valor & Data -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Valor (R$) *</label>
+            <input type="number" step="0.01" min="0.01" id="tx-amount" required placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Data *</label>
+            <input type="date" id="tx-date" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <!-- Categoria & Forma de Pagamento -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Categoria *</label>
+            <select id="tx-category" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <!-- Populado via JS -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Forma de Pagamento</label>
+            <select id="tx-payment-method" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Transferência">Transferência Bancária</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Cartão">Cartão Débito/Crédito</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Observações (opcional)</label>
+          <input type="text" id="tx-notes" placeholder="Detalhes adicionais..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-transaction')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all">
+            Salvar Lançamento
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal 2: Novo / Editar Custo Fixo -->
+  <div id="modal-fixed-cost" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="fc-modal-title" class="text-base sm:text-lg font-bold text-slate-900">Novo Custo Fixo</h3>
+        <button onclick="App.closeModal('modal-fixed-cost')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-fixed-cost" onsubmit="App.saveFixedCostFromForm(event)" class="space-y-4">
+        <!-- Nome -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Nome do Custo Fixo *</label>
+          <input type="text" id="fc-name" required placeholder="Ex: Energia Elétrica, Internet, Água..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Valor & Dia de Vencimento -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Valor Estimado (R$) *</label>
+            <input type="number" step="0.01" min="0.01" id="fc-amount" required placeholder="0,00" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Dia do Vencimento *</label>
+            <input type="number" min="1" max="31" id="fc-due-day" required placeholder="Ex: 10" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <!-- Categoria -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Categoria *</label>
+          <select id="fc-category" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <!-- Populado via JS -->
+          </select>
+        </div>
+
+        <!-- Observações -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Observações</label>
+          <input type="text" id="fc-notes" placeholder="Detalhes do contrato, código do débito..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-fixed-cost')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all">
+            Salvar Custo Fixo
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal 3: Confirmar Pagamento de Custo Fixo -->
+  <div id="modal-confirm-fixed-cost" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <span class="text-[11px] font-bold text-brand-700 uppercase tracking-wider">Confirmação Manual</span>
+          <h3 class="text-base sm:text-lg font-bold text-slate-900">Efetivar Pagamento</h3>
+        </div>
+        <button onclick="App.closeModal('modal-confirm-fixed-cost')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-confirm-fixed-cost" onsubmit="App.executeConfirmFixedCost(event)" class="space-y-4">
+        <input type="hidden" id="conf-fc-id">
+        <input type="hidden" id="conf-fc-yearmonth">
+
+        <div class="p-3.5 bg-brand-50/70 border border-brand-200/80 rounded-2xl">
+          <span class="text-[11px] text-brand-800 font-medium block">Custo Fixo Selecionado:</span>
+          <p id="conf-fc-name-display" class="text-sm font-bold text-brand-900 mt-0.5">Conta</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Valor Pago (R$) *</label>
+            <input type="number" step="0.01" min="0.01" id="conf-fc-amount" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Data do Pagamento *</label>
+            <input type="date" id="conf-fc-date" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Forma de Pagamento</label>
+          <select id="conf-fc-method" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="Pix">Pix</option>
+            <option value="Boleto">Boleto Bancário</option>
+            <option value="Transferência">Transferência Bancária</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Cartão">Cartão</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Observações do Comprovante</label>
+          <input type="text" id="conf-fc-notes" placeholder="Ex: Pago com desconto, repassado comprovante..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-confirm-fixed-cost')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all">
+            Confirmar e Lançar
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal 4: Nova Categoria -->
+  <div id="modal-category" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl animate-fade-in space-y-4">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-900">Nova Categoria</h3>
+        <button onclick="App.closeModal('modal-category')" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="App.saveCategoryFromForm(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Nome da Categoria *</label>
+          <input type="text" id="cat-name" required placeholder="Ex: Eventos, Plantio, Manutenção..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tipo *</label>
+            <select id="cat-type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+              <option value="income">Entrada (+)</option>
+              <option value="expense">Saída (-)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Cor Identificadora</label>
+            <input type="color" id="cat-color" value="#15803d" class="w-full h-9 p-1 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="App.closeModal('modal-category')" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2 bg-brand-800 text-white text-xs font-bold rounded-xl">
+            Criar Categoria
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Container Oculto para Impressão e Download de PDF -->
+  <div id="report-print-container" class="hidden"></div>
+
+  <!-- Toast Container para Alertas -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- Scripts da Aplicação -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Registro de Service Worker para PWA / Offline -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.log('SW registration error:', err);
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>
