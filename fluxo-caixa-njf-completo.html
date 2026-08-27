@@ -3129,15 +3129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   </script>
 
   <!-- Registro de Service Worker para PWA / Offline -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => {
-          console.log('SW registration error:', err);
-        });
-      });
-    }
-  </script>
+  
 </body>
 
 </html>
