@@ -64,18 +64,7 @@ const StorageManager = {
           this.showLogin();
           return false;
         }
-        this.authenticated = true;
-        this.currentUser = { username: session.user.email, role: 'manager' };
-        const profile = await this.supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        if (profile.data) this.currentUser.role = profile.data.role;
-        const result = await this.supabase.from('app_data').select('data').eq('id', 1).single();
-        const hasRemoteData = Boolean(result.data && result.data.data && Object.keys(result.data.data).length);
-        if (!hasRemoteData) localStorage.clear();
-        if (hasRemoteData) {
-          Object.entries(result.data.data).forEach(([key, value]) => localStorage.setItem(key, JSON.stringify(value)));
-        }
-        this.initializeDefaults();
-        if (!hasRemoteData) this.sync();
+        await this.completeAuthentication(session.user);
         return true;
       })
       .catch(() => {
@@ -83,6 +72,29 @@ const StorageManager = {
         return false;
       });
     return this.ready;
+  },
+
+  async completeAuthentication(user) {
+    this.authenticated = true;
+    this.currentUser = { username: user.email, role: 'manager' };
+    const profile = await this.supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profile.data) this.currentUser.role = profile.data.role;
+
+    const result = await this.supabase.from('app_data').select('data').eq('id', 1).single();
+    if (result.error) throw result.error;
+
+    const remoteData = result.data?.data;
+    const hasRemoteData = Boolean(remoteData && Object.keys(remoteData).length);
+    if (hasRemoteData) {
+      Object.entries(remoteData).forEach(([key, value]) => localStorage.setItem(key, JSON.stringify(value)));
+    } else {
+      localStorage.clear();
+      this.initializeDefaults();
+      await this.sync();
+      return;
+    }
+
+    this.initializeDefaults();
   },
 
   initializeDefaults() {
@@ -101,7 +113,7 @@ const StorageManager = {
     }
   },
 
-  sync() {
+ async sync() {
     if (!this.authenticated || !this.supabase) return;
     const data = {};
     Object.values(STORAGE_KEYS).forEach(key => {
@@ -132,14 +144,16 @@ const StorageManager = {
         overlay.querySelector('.login-error').textContent = error.message;
         return;
       }
-      this.currentUser = { username: data.user.email, role: 'manager' };
-      const profile = await this.supabase.from('profiles').select('role').eq('id', data.user.id).single();
-      if (profile.data) this.currentUser.role = profile.data.role;
+      try {
+        await this.completeAuthentication(data.user);
+      } catch (authenticationError) {
+        overlay.querySelector('.login-error').textContent = 'Não foi possível carregar os dados compartilhados.';
+        console.error('Falha ao carregar dados remotos:', authenticationError);
+        return;
+      }
       overlay.remove();
       document.body.classList.remove('auth-locked');
-      this.authenticated = true;
       this.ready = Promise.resolve(true);
-      this.initializeDefaults();
       App.initAuthenticated();
     });
   },
