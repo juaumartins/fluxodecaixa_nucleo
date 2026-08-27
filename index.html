@@ -424,6 +424,10 @@
             <span>Restaurar Backup</span>
             <input type="file" accept=".json" onchange="App.importBackupFile(event)" class="hidden">
           </label>
+          <button onclick="App.resetAllDataConfirm()" class="flex items-center justify-center gap-2 p-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Começar do zero</span>
+          </button>
         </div>
       </div>
 

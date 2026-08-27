@@ -70,6 +70,7 @@ const StorageManager = {
         if (profile.data) this.currentUser.role = profile.data.role;
         const result = await this.supabase.from('app_data').select('data').eq('id', 1).single();
         const hasRemoteData = Boolean(result.data && result.data.data && Object.keys(result.data.data).length);
+        if (!hasRemoteData) localStorage.clear();
         if (hasRemoteData) {
           Object.entries(result.data.data).forEach(([key, value]) => localStorage.setItem(key, JSON.stringify(value)));
         }
@@ -94,9 +95,7 @@ const StorageManager = {
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
       this.saveSettings(DEFAULT_SETTINGS);
     }
-    if (!localStorage.getItem(STORAGE_KEYS.TRANSACTIONS)) {
-      this.seedInitialTransactions();
-    }
+    if (!localStorage.getItem(STORAGE_KEYS.TRANSACTIONS)) this.saveTransactions([]);
     if (!localStorage.getItem(STORAGE_KEYS.FIXED_CONFIRMATIONS)) {
       localStorage.setItem(STORAGE_KEYS.FIXED_CONFIRMATIONS, JSON.stringify([]));
     }
@@ -504,13 +503,20 @@ const StorageManager = {
     }
   },
 
-  resetAllData() {
+  async resetAllData() {
     localStorage.clear();
-    this.saveCategories(DEFAULT_CATEGORIES);
-    this.saveFixedCosts(DEFAULT_FIXED_COSTS);
-    this.saveSettings(DEFAULT_SETTINGS);
-    this.saveTransactions([]);
-    this.saveFixedCostConfirmations([]);
+    const data = {
+      [STORAGE_KEYS.TRANSACTIONS]: [],
+      [STORAGE_KEYS.FIXED_COSTS]: DEFAULT_FIXED_COSTS,
+      [STORAGE_KEYS.FIXED_CONFIRMATIONS]: [],
+      [STORAGE_KEYS.CATEGORIES]: DEFAULT_CATEGORIES,
+      [STORAGE_KEYS.SETTINGS]: DEFAULT_SETTINGS
+    };
+    Object.entries(data).forEach(([key, value]) => localStorage.setItem(key, JSON.stringify(value)));
+    if (this.authenticated && this.supabase) {
+      const { error } = await this.supabase.from('app_data').upsert({ id: 1, data, updated_at: new Date().toISOString() });
+      if (error) throw error;
+    }
   }
 };
 

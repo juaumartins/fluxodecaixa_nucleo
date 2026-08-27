@@ -938,6 +938,19 @@ const App = {
     e.target.value = ''; // Limpar input
   },
 
+  async resetAllDataConfirm() {
+    const confirmed = confirm('Isso apagará os lançamentos de TODOS os usuários e não poderá ser desfeito. Deseja continuar?');
+    if (!confirmed) return;
+    try {
+      await StorageManager.resetAllData();
+      this.showToast('Todos os dados foram apagados. O app está novo.', 'success');
+      this.switchTab('dashboard');
+    } catch (error) {
+      console.error('Falha ao resetar dados:', error);
+      this.showToast('Não foi possível resetar os dados.', 'error');
+    }
+  },
+
   // Notificações Toast
   showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
